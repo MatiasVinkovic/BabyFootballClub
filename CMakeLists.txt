@@ -9,13 +9,15 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS
+
+find_package(Qt6 REQUIRED COMPONENTS
     Quick
     QuickControls2
     Sql
 )
+qt_standard_project_setup()
 
-qt_standard_project_setup(REQUIRES 6.5)
+
 
 qt_policy(SET QTP0004 NEW)
 
@@ -39,3 +41,21 @@ target_link_libraries(babyfoot-app PRIVATE
     Qt6::QuickControls2
     Qt6::Sql
 )
+
+# Activation de CTest pour la pipeline actions github
+include(CTest)
+
+if(BUILD_TESTING)
+    # Exemple d'exécutable de test pour le repository
+    add_executable(unit_tests
+        tests/test_repository.cpp
+        src/infra/SqlitePlayerRepository.cpp
+    )
+    target_include_directories(unit_tests PRIVATE src)
+    target_link_libraries(unit_tests PRIVATE
+        Qt6::Sql
+        Qt6::Test
+    )
+    # Enregistrement du binaire auprès de ctest
+    add_test(NAME RepoTests COMMAND unit_tests)
+endif()

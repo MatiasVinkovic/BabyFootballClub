@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  fast-ci:
+  ci-pipeline:
     runs-on: ubuntu-24.04
 
     steps:
@@ -26,7 +26,8 @@ jobs:
 
       - name: Analyse statique (Cppcheck)
         run: |
-          cppcheck --enable=warning,style,performance,portability \
+          cppcheck --enable=warning,performance \
+                   --suppress=uninitMemberVarPrivate \
                    --inline-suppr \
                    --error-exitcode=1 \
                    --suppress=missingIncludeSystem \

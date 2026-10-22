@@ -1,0 +1,6 @@
+module Babyfoot
+typeinfo babyfoot-app.qmltypes
+prefer :/qt/qml/Babyfoot/
+Main 1.0 src/ui/Main.qml
+depends QtQuick
+

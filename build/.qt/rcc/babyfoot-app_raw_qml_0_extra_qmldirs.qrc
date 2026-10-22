@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/qt/qml/Babyfoot/">
+    <file alias="src/ui/qmldir">/Users/matiasvinkovic/Dev/BabyFootballClub/build/Babyfoot/src/ui/qmldir</file>
+  </qresource>
+</RCC>
+

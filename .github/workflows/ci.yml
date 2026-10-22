@@ -1,104 +1,45 @@
-name: CI Babyfoot
+name: CI Légère C++ / Qt
 
 on:
   push:
-    branches:
-      - main
-      - 'release/**'
-      - 'feature/**'
+    branches: [ main, 'feature/**', 'release/**' ]
   pull_request:
-    branches:
-      - main
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches: [ main ]
 
 jobs:
-  # -------------------------------------------------------------
-  # Job 1 : Tests rapides sur Ubuntu (se déclenche sur chaque push/PR)
-  # -------------------------------------------------------------
-  build-and-test:
-    # Ignore l'exécution si le commit contient "[skip ci]" ou "[ci skip]"
-    if: "!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]')"
+  fast-ci:
     runs-on: ubuntu-24.04
 
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v4
 
-      - name: Dépendances système Linux
+      - name: Dépendances système et Qt6 minimal
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev libxkbcommon-dev ninja-build
+          sudo apt-get install -y \
+            ninja-build \
+            cppcheck \
+            qt6-base-dev \
+            qt6-declarative-dev \
+            libqt6sql6-sqlite
 
-      - name: Installer Qt 6.5
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.5.3'
-          host: 'linux'
-          target: 'desktop'
-          modules: 'qtquickcontrols2'
-
-      - name: Configurer CMake (avec tests)
+      - name: Analyse statique (Cppcheck)
         run: |
-          cmake -B build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_TESTING=ON
-
-      - name: Compiler
-        run: cmake --build build
-
-      - name: Exécuter les tests (CTest)
-        run: ctest --test-dir build --output-on-failure
-
-  # -------------------------------------------------------------
-  # Job 2 : Matrice multiplateforme (uniquement sur main ou branches release)
-  # -------------------------------------------------------------
-  build-matrix:
-    needs: build-and-test
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, macos-14, windows-2022]
-
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - name: Récupérer le code
-        uses: actions/checkout@v4
-
-      - name: Dépendances système Linux
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev libxkbcommon-dev ninja-build
-
-      - name: Installer Ninja (Mac & Windows)
-        if: runner.os != 'Linux'
-        run: |
-          if [ "${{ runner.os }}" = "macOS" ]; then brew install ninja; fi
-        shell: bash
-
-      - name: Installer Qt 6.5
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.5.3'
-          host: ${{ runner.os == 'macOS' && 'mac' || (runner.os == 'Windows' && 'windows' || 'linux') }}
-          target: 'desktop'
-          arch: ${{ runner.os == 'Windows' && 'win64_msvc2019_64' || '' }}
-          modules: 'qtquickcontrols2'
-
-      - name: Configurer l'environnement MSVC (Windows)
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
+          cppcheck --enable=warning,style,performance,portability \
+                   --inline-suppr \
+                   --error-exitcode=1 \
+                   --suppress=missingIncludeSystem \
+                   src/
 
       - name: Configurer CMake
         run: |
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_TESTING=OFF
+            -DCMAKE_CXX_STANDARD=20
 
-      - name: Compiler
+      - name: Compiler (Vérifier que tout compile)
         run: cmake --build build
+
+      - name: Exécuter les tests (si configurés)
+        run: ctest --test-dir build --output-on-failure

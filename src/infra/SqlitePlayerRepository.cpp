@@ -4,12 +4,22 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QVariant>
+#include <QDebug>
+#include <cstdio>
+#include <string>
+#include <QString>
+
+
+using namespace std;
 
 namespace babyfoot::infra {
 
-SqlitePlayerRepository::SqlitePlayerRepository(QString databasePath)
-    : databasePath_{std::move(databasePath)} {}
+    
 
+SqlitePlayerRepository::SqlitePlayerRepository(QString databasePath)
+    : databasePath_{move(databasePath)} {}
+
+// initialisation de la base de donnée SQLite
 void SqlitePlayerRepository::init() {
     auto db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"));
     db.setDatabaseName(databasePath_);
@@ -29,8 +39,9 @@ void SqlitePlayerRepository::init() {
     )");
 }
 
-std::vector<babyfoot::core::Player> SqlitePlayerRepository::getAll() {
-    std::vector<babyfoot::core::Player> players;
+// récupérer un vecteur de tous les joueurs
+vector<babyfoot::core::Player> SqlitePlayerRepository::getAll() {
+    vector<babyfoot::core::Player> players; //vecteur de retour
 
     QSqlQuery query{
         QStringLiteral("SELECT id, pseudo FROM players ORDER BY pseudo")
@@ -46,7 +57,12 @@ std::vector<babyfoot::core::Player> SqlitePlayerRepository::getAll() {
     return players;
 }
 
+// ajouter un joueur au vecteur existant
 babyfoot::core::Player SqlitePlayerRepository::add(const QString& pseudo) {
+    if (pseudo == QString::fromStdString("Matias")) {
+        qDebug() << "hello matias"; 
+    }
+
     QSqlQuery query;
     query.prepare(QStringLiteral(
         "INSERT INTO players (pseudo) VALUES (:pseudo)"

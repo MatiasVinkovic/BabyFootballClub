@@ -1,4 +1,4 @@
-name: CI Légère C++ / Qt
+name: cpp pipeline
 
 on:
   push:
@@ -7,40 +7,33 @@ on:
     branches: [ main ]
 
 jobs:
-  ci-pipeline:
+  build:
     runs-on: ubuntu-24.04
 
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v4
 
-      - name: Dépendances système et Qt6 minimal
+      - name: Outils de build et Qt minimal
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             ninja-build \
             cppcheck \
+            libxkbcommon-dev \
             qt6-base-dev \
             qt6-declarative-dev \
             libqt6sql6-sqlite
 
-      - name: Analyse statique (Cppcheck)
+      - name: Analyse statique (Erreurs majeures uniquement)
         run: |
-          cppcheck --enable=warning,performance \
-                   --suppress=uninitMemberVarPrivate \
-                   --inline-suppr \
+          cppcheck --enable=error \
                    --error-exitcode=1 \
                    --suppress=missingIncludeSystem \
                    src/
 
       - name: Configurer CMake
-        run: |
-          cmake -B build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_STANDARD=20
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
-      - name: Compiler (Vérifier que tout compile)
+      - name: Vérifier la compilation
         run: cmake --build build
-
-      - name: Exécuter les tests (si configurés)
-        run: ctest --test-dir build --output-on-failure

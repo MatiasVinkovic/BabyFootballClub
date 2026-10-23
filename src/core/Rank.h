@@ -26,23 +26,22 @@ struct PlayerRank {
 
 namespace rank_config {
     inline constexpr float kSslThreshold   = 1900.0f;
-    inline constexpr int   kRankedRanks    = 7;   // Bronze -> GrandChampion
+    inline constexpr int   kRankedRanks    = 7;  
     inline constexpr int   kTiersPerRank   = 3;
-    inline constexpr int   kTierCount      = kRankedRanks * kTiersPerRank; // 21
+    inline constexpr int   kTierCount      = kRankedRanks * kTiersPerRank;
     inline constexpr float kTierWidth      = 80.0f;
-    inline constexpr float kFirstThreshold = kSslThreshold - kTierCount * kTierWidth; // 220
+    inline constexpr float kFirstThreshold = kSslThreshold - kTierCount * kTierWidth; 
 }
 
-// Convertit un MMR en rang. Pour un joueur sans match, voir Player::rank().
 constexpr PlayerRank rankFromMMR(float mmr) {
     using namespace rank_config;
 
-    if (mmr != mmr)            return { Rank::Bronze, Tier::I };  // NaN : valeur de secours
+    if (mmr != mmr)            return { Rank::Bronze, Tier::I }; 
     if (mmr >= kSslThreshold)  return { Rank::SSL, Tier::None };
     if (mmr < kFirstThreshold) return { Rank::Bronze, Tier::I };
 
-    int index = static_cast<int>((mmr - kFirstThreshold) / kTierWidth); // 0..20
-    index = std::clamp(index, 0, kTierCount - 1); // protège des erreurs d'arrondi flottant
+    int index = static_cast<int>((mmr - kFirstThreshold) / kTierWidth);
+    index = std::clamp(index, 0, kTierCount - 1);
 
     return {
         static_cast<Rank>(1 + index / kTiersPerRank),

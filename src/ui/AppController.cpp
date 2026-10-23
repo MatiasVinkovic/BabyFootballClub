@@ -17,7 +17,7 @@ void AppController::addPlayer(const QString& pseudo) {
         return;
     }
 
-    service_.addPlayer(pseudo.trimmed());
+    service_.addPlayer(pseudo.trimmed().toStdString());
     refreshPlayers();
 }
 
@@ -30,7 +30,9 @@ void AppController::refreshPlayers() {
     players_.clear();
 
     for (const auto& player : service_.players()) {
-        players_.append(player.pseudo);
+        players_.append(
+            QString::fromStdString(player.pseudo)
+        );
     }
 
     emit playersChanged();

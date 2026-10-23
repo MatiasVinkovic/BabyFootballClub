@@ -1,19 +1,22 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "core/PlayerService.hpp"
 
 namespace babyfoot::infra {
 
 class SqlitePlayerRepository final : public babyfoot::core::IPlayerRepository {
 public:
-    explicit SqlitePlayerRepository(QString databasePath);
+    explicit SqlitePlayerRepository(std::string databasePath);
 
     void init() override;
-    std::vector<babyfoot::core::Player> getAll() override; // vecteur des joueurs existants
-    babyfoot::core::Player add(const QString& pseudo) override; // ajouter un joueur au vecteur
+    std::vector<babyfoot::core::Player> getAll() override;
+    babyfoot::core::Player add(const std::string& pseudo) override;
 
 private:
-    QString databasePath_;
+    std::string databasePath_;
 };
 
 }

@@ -41,3 +41,8 @@ target_link_libraries(babyfoot-app PRIVATE
     Qt6::QuickControls2
     Qt6::Sql
 )
+
+add_executable(babyfoot-console
+    tools/console/main.cpp
+)
+target_include_directories(babyfoot-console PRIVATE src)

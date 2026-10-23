@@ -1,22 +1,19 @@
 #pragma once
 
-#include <QString>
+#include <string>
 #include <vector>
 
 #include "core/Player.hpp"
 
-// classe qui fait la partie gestion des joueurs
-
 namespace babyfoot::core {
 
-// interface (full virtual)
 class IPlayerRepository {
 public:
     virtual ~IPlayerRepository() = default;
 
-    virtual void init() = 0; // obligé à réaliser une implémentation complète
-    virtual std::vector<Player> getAll() = 0; // liste des joueurs existant
-    virtual Player add(const QString& pseudo) = 0; // ajouter un joueur dans la liste
+    virtual void init() = 0;
+    virtual std::vector<Player> getAll() = 0;
+    virtual Player add(const std::string& pseudo) = 0;
 };
 
 class PlayerService {
@@ -28,11 +25,11 @@ public:
         repository_.init();
     }
 
-    std::vector<Player> players() const {
-        return const_cast<IPlayerRepository&>(repository_).getAll();
+    std::vector<Player> players()  {
+        return repository_.getAll();
     }
 
-    Player addPlayer(const QString& pseudo) {
+    Player addPlayer(const std::string& pseudo) {
         return repository_.add(pseudo);
     }
 

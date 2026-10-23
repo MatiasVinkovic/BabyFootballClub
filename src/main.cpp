@@ -15,13 +15,16 @@ int main(int argc, char** argv) {
     const QString databasePath =
         QGuiApplication::applicationDirPath() + "/babyfoot.db";
 
-    babyfoot::infra::SqlitePlayerRepository repository{databasePath};
+    babyfoot::infra::SqlitePlayerRepository repository{
+        databasePath.toStdString()
+    };
+
     babyfoot::core::PlayerService playerService{repository};
     playerService.initialize();
 
     if (playerService.players().empty()) {
-        playerService.addPlayer(QStringLiteral("Alice"));
-        playerService.addPlayer(QStringLiteral("Bob"));
+        playerService.addPlayer("Alice");
+        playerService.addPlayer("Bob");
     }
 
     babyfoot::ui::AppController controller{playerService};

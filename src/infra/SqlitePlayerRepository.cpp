@@ -4,25 +4,15 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QVariant>
-#include <QDebug>
-#include <cstdio>
-#include <string>
-#include <QString>
-
-
-using namespace std;
 
 namespace babyfoot::infra {
 
-    
+SqlitePlayerRepository::SqlitePlayerRepository(std::string databasePath)
+    : databasePath_{std::move(databasePath)} {}
 
-SqlitePlayerRepository::SqlitePlayerRepository(QString databasePath)
-    : databasePath_{move(databasePath)} {}
-
-// initialisation de la base de donnée SQLite
 void SqlitePlayerRepository::init() {
     auto db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"));
-    db.setDatabaseName(databasePath_);
+    db.setDatabaseName(QString::fromStdString(databasePath_));
 
     if (!db.open()) {
         qFatal("Impossible d'ouvrir la base SQLite : %s",
@@ -39,9 +29,8 @@ void SqlitePlayerRepository::init() {
     )");
 }
 
-// récupérer un vecteur de tous les joueurs
-vector<babyfoot::core::Player> SqlitePlayerRepository::getAll() {
-    vector<babyfoot::core::Player> players; //vecteur de retour
+std::vector<babyfoot::core::Player> SqlitePlayerRepository::getAll() {
+    std::vector<babyfoot::core::Player> players;
 
     QSqlQuery query{
         QStringLiteral("SELECT id, pseudo FROM players ORDER BY pseudo")
@@ -50,27 +39,26 @@ vector<babyfoot::core::Player> SqlitePlayerRepository::getAll() {
     while (query.next()) {
         players.push_back({
             .id = query.value(0).toInt(),
-            .pseudo = query.value(1).toString()
+            .pseudo = query.value(1).toString().toStdString()
         });
     }
 
     return players;
 }
 
-// ajouter un joueur au vecteur existant
-babyfoot::core::Player SqlitePlayerRepository::add(const QString& pseudo) {
-    if (pseudo == QString::fromStdString("Matias")) {
-        qDebug() << "hello matias"; 
-    }
-
+babyfoot::core::Player SqlitePlayerRepository::add(const std::string& pseudo) {
     QSqlQuery query;
     query.prepare(QStringLiteral(
         "INSERT INTO players (pseudo) VALUES (:pseudo)"
     ));
-    query.bindValue(QStringLiteral(":pseudo"), pseudo);
+    query.bindValue(
+        QStringLiteral(":pseudo"),
+        QString::fromStdString(pseudo)
+    );
 
     if (!query.exec()) {
-        qWarning() << "Insertion impossible :" << query.lastError().text();
+        qWarning() << "Insertion impossible :"
+                   << query.lastError().text();
         return {};
     }
 

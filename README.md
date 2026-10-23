@@ -1,37 +1,59 @@
-# BabyFootballClub
-Un pour tous tous pour un baby
+⚽ BabyFootballClub ⚽
 
-comment compiler le projet en fonction de la plateforme : 
+Un pour tous tous pour un baby ! 🔴🔵
 
-# 1. Configurer
+🛠️ Dépendances Linux
+
+Si vous êtes sur Ubuntu / Debian / Linux Mint, installez les paquets nécessaires avec :
+
+sudo apt update
+sudo apt install -y build-essential cmake qt6-base-dev qt6-declarative-dev
+
+
+🔨 Comment compiler le projet en fonction de la plateforme :
+
+💡 Astuce Nettoyage : Si vous rencontrez une erreur de configuration CMake, nettoyez le dossier de build :
+
+rm -rf build
+
+
+1. Configurer
+
 cmake -B build -S .
 
-# 2. Compiler
+2. Compiler
+
 cmake --build build
 
-# 3. Lancer
-# Sur Linux / Mac :
+
+3. Lancer
+
+Sur Linux / Mac :
+
 ./build/babyfoot-app
 
-# Sur Windows (PowerShell) :
+
+Sur Windows (PowerShell) :
+
 .\build\babyfoot-app.exe
 
-Comment la pipeline est orchestrée
 
-    Filtrage par branche (branches) :
+⚙️ Comment la pipeline est orchestrée ⚽
 
-        feature/** et PRs : déclenchent uniquement le job build-and-test sur Linux (très rapide, évite de consommer inutilement ton quota de minutes GitHub Actions).
+Filtrage par branche (branches) :
 
-        main et release/** : déclenchent la matrice complète (Linux, macOS, Windows) après validation des tests.
+feature/** et PRs : déclenchent uniquement le job build-and-test sur Linux (très rapide, évite de consommer inutilement ton quota de minutes GitHub Actions).
 
-    Filtrage par message de commit (if: !contains(...)) :
+main et release/** : déclenchent la matrice complète (Linux, macOS, Windows) après validation des tests.
 
-        Si tu fais un commit de documentation ou de cosmétique, ajoute [skip ci] dans ton message de commit : la pipeline ignorera le push sans rien consommer.
+Filtrage par message de commit (if: !contains(...)) :
 
-    Annulation des builds obsolètes (concurrency) :
+Si tu fais un commit de documentation ou de cosmétique, ajoute [skip ci] dans ton message de commit : la pipeline ignorera le push sans rien consommer.
 
-        Si tu pousses 3 commits d'affilée en 2 minutes, GitHub Actions annule automatiquement les runs précédents pour ne tester que le dernier.
+Annulation des builds obsolètes (concurrency) :
 
-    Générateur Ninja :
+Si tu pousses 3 commits d'affilée en 2 minutes, GitHub Actions annule automatiquement les runs précédents pour ne tester que le dernier.
 
-        Spécifier -G Ninja accélère significativement les temps de compilation par rapport aux Makefiles standards dans les conteneurs CI.
+Générateur Ninja :
+
+Spécifier -G Ninja accélère significativement les temps de compilation par rapport aux Makefiles standards dans les conteneurs CI.

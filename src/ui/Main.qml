@@ -6,10 +6,12 @@ import QtQuick.Effects
 ApplicationWindow {
     id: root
 
-    width: 900
-    height: 600
-    minimumWidth: 800
-    minimumHeight: 520
+    property int currentPage: 0
+
+    width: 1100
+    height: 650
+    minimumWidth: 980
+    minimumHeight: 560
     visible: true
     title: "Babyfoot Arena Master"
     color: "#0B0F19"
@@ -56,13 +58,111 @@ ApplicationWindow {
 
     RowLayout {
         anchors.fill: parent
-        anchors.margins: 28
-        spacing: 24
+        anchors.margins: 22
+        spacing: 16
+
+        Rectangle {
+            Layout.fillHeight: true
+            Layout.preferredWidth: 160
+            radius: 20
+            color: "#141A29"
+            border.color: "#222D42"
+            border.width: 1
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 10
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 48
+                    spacing: 10
+
+                    Rectangle {
+                        width: 28
+                        height: 28
+                        radius: 9
+                        color: "#1A2A44"
+                        border.color: "#00E5FF"
+                        border.width: 1
+
+                        Label {
+                            anchors.centerIn: parent
+                            text: "⚽"
+                            font.pixelSize: 15
+                        }
+                    }
+
+                    Label {
+                        text: "BFC"
+                        color: "#FFFFFF"
+                        font.pixelSize: 15
+                        font.bold: true
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: "#222D42"
+                }
+
+                Repeater {
+                    model: [
+                        { label: "Accueil", icon: "⌂" },
+                        { label: "Matchs", icon: "⚽" },
+                        { label: "Joueurs", icon: "♟" },
+                        { label: "Classement", icon: "🏆" },
+                        { label: "Historique", icon: "◷" }
+                    ]
+
+                    delegate: Button {
+                        required property int index
+                        required property var modelData
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 46
+                        onClicked: root.currentPage = index
+
+                        contentItem: RowLayout {
+                            spacing: 10
+
+                            Label {
+                                Layout.preferredWidth: 20
+                                text: modelData.icon
+                                color: root.currentPage === index ? "#00E5FF" : "#7E8FA6"
+                                font.pixelSize: 16
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+
+                            Label {
+                                Layout.fillWidth: true
+                                text: modelData.label
+                                color: root.currentPage === index ? "#FFFFFF" : "#9AA9BD"
+                                font.pixelSize: 12
+                                font.weight: root.currentPage === index ? Font.DemiBold : Font.Normal
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        background: Rectangle {
+                            radius: 11
+                            color: root.currentPage === index ? "#1A2A44" : (parent.hovered ? "#192238" : "transparent")
+                            border.color: root.currentPage === index ? "#2C3B59" : "transparent"
+                            border.width: 1
+                        }
+                    }
+                }
+
+                Item { Layout.fillHeight: true }
+            }
+        }
 
         // ==========================================
         // PANNEAU GAUCHE : Match & Compteur
         // ==========================================
         Rectangle {
+            visible: root.currentPage === 0
             Layout.fillHeight: true
             Layout.preferredWidth: 380
             radius: 24
@@ -192,6 +292,7 @@ ApplicationWindow {
         // PANNEAU DROIT : Joueurs & Inscription
         // ==========================================
         Rectangle {
+            visible: root.currentPage === 0
             Layout.fillHeight: true
             Layout.fillWidth: true
             radius: 24
@@ -309,6 +410,7 @@ ApplicationWindow {
 
                     delegate: Rectangle {
                         id: playerCard
+                        property string playerName: typeof modelData !== "undefined" ? modelData : model.name
                         width: playerListView.width
                         height: 60
                         radius: 16
@@ -321,7 +423,15 @@ ApplicationWindow {
                         MouseArea {
                             id: cardMouseArea
                             anchors.fill: parent
+                            z: 1
                             hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (typeof appController !== "undefined") {
+                                    appController.selectPlayer(playerCard.playerName)
+                                    playerDetailsDialog.open()
+                                }
+                            }
                         }
 
                         RowLayout {
@@ -342,7 +452,7 @@ ApplicationWindow {
                                 Text {
                                     anchors.centerIn: parent
                                     text: {
-                                        var raw = typeof modelData !== "undefined" ? modelData : model.name
+                                        var raw = playerCard.playerName
                                         return raw && raw.length > 0 ? raw.charAt(0).toUpperCase() : "?"
                                     }
                                     color: "#00E5FF"
@@ -354,7 +464,7 @@ ApplicationWindow {
                             // Nom du joueur
                             Text {
                                 Layout.fillWidth: true
-                                text: typeof modelData !== "undefined" ? modelData : model.name
+                                text: playerCard.playerName
                                 color: "#E1E7F0"
                                 font.pixelSize: 15
                                 font.weight: Font.DemiBold
@@ -370,6 +480,334 @@ ApplicationWindow {
                             }
                         }
                     }
+                }
+            }
+        }
+
+        Item {
+            visible: root.currentPage !== 0
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 24
+                color: "#141A29"
+                border.color: "#222D42"
+                border.width: 1
+            }
+        }
+    }
+
+    Dialog {
+        id: playerDetailsDialog
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        width: Math.min(root.width - 48, 520)
+        modal: true
+        dim: true
+        title: ""
+        padding: 24
+
+        background: Rectangle {
+            radius: 20
+            color: "#141A29"
+            border.color: "#2C3B59"
+            border.width: 1
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 18
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 4
+
+                    Label {
+                        Layout.fillWidth: true
+                        text: appController.selectedPlayer.pseudo || "Joueur"
+                        color: "#FFFFFF"
+                        font.pixelSize: 24
+                        font.bold: true
+                        elide: Text.ElideRight
+                    }
+
+                    Label {
+                        text: appController.selectedPlayer.rank || "Unranked"
+                        color: "#00E5FF"
+                        font.pixelSize: 14
+                        font.bold: true
+                    }
+                }
+
+                Rectangle {
+                    width: 44
+                    height: 44
+                    radius: 22
+                    color: "#1A2A44"
+                    border.color: "#00E5FF"
+                    border.width: 1
+
+                    Label {
+                        anchors.centerIn: parent
+                        text: (appController.selectedPlayer.pseudo || "?").charAt(0).toUpperCase()
+                        color: "#00E5FF"
+                        font.pixelSize: 18
+                        font.bold: true
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 86
+                radius: 14
+                color: "#0E131F"
+                border.color: "#2C3B59"
+                border.width: 1
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 18
+                    anchors.rightMargin: 18
+                    spacing: 16
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+
+                        Label {
+                            text: "🔥  " + Number(appController.selectedPlayer.mmr ?? 1000).toFixed(0) + " MMR"
+                            color: "#FFFFFF"
+                            font.pixelSize: 27
+                            font.bold: true
+                        }
+
+                        Label {
+                            text: "CLASSEMENT"
+                            color: "#7E8FA6"
+                            font.pixelSize: 10
+                            font.bold: true
+                        }
+                    }
+
+                    Rectangle {
+                        width: 1
+                        Layout.fillHeight: true
+                        Layout.topMargin: 18
+                        Layout.bottomMargin: 18
+                        color: "#2C3B59"
+                    }
+
+                    Label {
+                        text: appController.selectedPlayer.rank || "Unranked"
+                        color: "#00E5FF"
+                        font.pixelSize: 20
+                        font.bold: true
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 92
+                radius: 14
+                color: "#0E131F"
+                border.color: "#222D42"
+                border.width: 1
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 18
+                    anchors.rightMargin: 18
+                    spacing: 8
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+                        Label {
+                            Layout.fillWidth: true
+                            text: "🏆  " + String(appController.selectedPlayer.wins ?? 0)
+                            color: "#8DE0A8"
+                            font.pixelSize: 20
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: "Victoires"
+                            color: "#7E8FA6"
+                            font.pixelSize: 11
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                    }
+
+                    Rectangle {
+                        width: 1
+                        Layout.fillHeight: true
+                        Layout.topMargin: 18
+                        Layout.bottomMargin: 18
+                        color: "#222D42"
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+                        Label {
+                            Layout.fillWidth: true
+                            text: String(appController.selectedPlayer.matchesPlayed ?? 0)
+                            color: "#FFFFFF"
+                            font.pixelSize: 32
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: "⚽ MATCHS JOUÉS"
+                            color: "#7E8FA6"
+                            font.pixelSize: 10
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                    }
+
+                    Rectangle {
+                        width: 1
+                        Layout.fillHeight: true
+                        Layout.topMargin: 18
+                        Layout.bottomMargin: 18
+                        color: "#222D42"
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+                        Label {
+                            Layout.fillWidth: true
+                            text: "💔  " + String(appController.selectedPlayer.losses ?? 0)
+                            color: "#FF8A9B"
+                            font.pixelSize: 20
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: "Défaites"
+                            color: "#7E8FA6"
+                            font.pixelSize: 11
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 106
+                radius: 14
+                color: "#0E131F"
+                border.color: "#222D42"
+                border.width: 1
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    spacing: 8
+
+                    Label {
+                        text: "🥅  STATISTIQUES DE BUTS"
+                        color: "#7E8FA6"
+                        font.pixelSize: 10
+                        font.bold: true
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            Label {
+                                Layout.fillWidth: true
+                                text: "⚽  " + String(appController.selectedPlayer.goals ?? 0)
+                                color: "#E1E7F0"
+                                font.pixelSize: 19
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                text: "Buts marqués"
+                                color: "#7E8FA6"
+                                font.pixelSize: 10
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            Label {
+                                Layout.fillWidth: true
+                                text: "😅  " + String(appController.selectedPlayer.ownGoals ?? 0)
+                                color: "#E1E7F0"
+                                font.pixelSize: 19
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                text: "CSC"
+                                color: "#7E8FA6"
+                                font.pixelSize: 10
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            Label {
+                                Layout.fillWidth: true
+                                text: "✨  " + String(appController.selectedPlayer.usefulGoals ?? 0)
+                                color: "#E1E7F0"
+                                font.pixelSize: 19
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                text: "Buts utiles"
+                                color: "#7E8FA6"
+                                font.pixelSize: 10
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                        }
+                    }
+                }
+            }
+
+            Button {
+                Layout.alignment: Qt.AlignRight
+                text: "Fermer"
+                onClicked: playerDetailsDialog.close()
+
+                contentItem: Text {
+                    text: parent.text
+                    color: "#FFFFFF"
+                    font.pixelSize: 14
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                background: Rectangle {
+                    radius: 10
+                    color: parent.down ? "#0055A5" : "#0072FF"
                 }
             }
         }

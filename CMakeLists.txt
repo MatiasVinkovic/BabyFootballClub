@@ -32,6 +32,11 @@ qt_add_qml_module(babyfoot-app
     VERSION 1.0
     QML_FILES
         src/ui/Main.qml
+        src/ui/HomeView.qml
+        src/ui/PlayerPanel.qml
+        src/ui/MatchPanel.qml
+        src/ui/PlayerDetailsDialog.qml
+        src/ui/Sidebar.qml
 )
 
 target_include_directories(babyfoot-app PRIVATE src)

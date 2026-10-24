@@ -57,8 +57,10 @@ Rectangle {
         Repeater {
             model: [
                 { label: "Accueil", icon: "⌂" },
+                { label: "Règlement", icon: "📖" },
                 { label: "Matchs", icon: "⚽" },
                 { label: "Joueurs", icon: "♟" },
+                
                 { label: "Classement", icon: "🏆" },
                 { label: "Historique", icon: "◷" }
             ]

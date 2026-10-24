@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/PlayerService.hpp"
-
+#include <QString>
 namespace babyfoot::infra {
 
 class SqlitePlayerRepository final : public babyfoot::core::IPlayerRepository {

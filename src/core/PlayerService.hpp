@@ -20,24 +20,27 @@ public:
 };
 
 class PlayerService {
-public:
-    explicit PlayerService(IPlayerRepository& repository)
-        : repository_{repository} {}
+    public:
+        explicit PlayerService(IPlayerRepository& repository)
+            : repository_{repository} {}
 
-    void initialize() {
-        repository_.init();
-    }
+        void initialize() {
+            repository_.init();
+        }
 
-    std::vector<Player> players() const {
-        return const_cast<IPlayerRepository&>(repository_).getAll();
-    }
+        std::vector<Player> players() const {
+            return const_cast<IPlayerRepository&>(repository_).getAll();
+        }
 
-    Player addPlayer(const QString& pseudo) {
-        return repository_.add(pseudo);
-    }
+        Player addPlayer(const QString& pseudo) {
+            return repository_.add(pseudo);
+        }
 
-private:
-    IPlayerRepository& repository_;
-};
+    private:
+        IPlayerRepository& repository_;
+
+
+        
+    };
 
 }

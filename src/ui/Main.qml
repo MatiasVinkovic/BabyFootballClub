@@ -70,8 +70,8 @@ ApplicationWindow {
 
             RegleView {}
 
-            // Page 1 : Matchs (ex. feature/regle)
-            Rectangle { radius: 24; color: "#141A29"; border.color: "#222D42"; border.width: 1 }
+            // Page 2 : Matchs
+            MatchView {}
 
             // Page 2 : Joueurs (ex. feature/joueur-mmr)
             Rectangle { radius: 24; color: "#141A29"; border.color: "#222D42"; border.width: 1 }

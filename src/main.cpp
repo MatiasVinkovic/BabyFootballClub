@@ -7,6 +7,7 @@
 #include "core/RegleService.hpp"
 #include "infra/SqlitePlayerRepository.hpp"
 #include "infra/SqliteRegleRepository.hpp"
+#include "infra/SqliteMatchRepository.hpp"
 
 #include "ui/AppController.hpp"
 
@@ -21,25 +22,27 @@ int main(int argc, char** argv) {
     // objet repository, sur le meme database path
     babyfoot::infra::SqlitePlayerRepository repository{databasePath};
     babyfoot::infra::SqliteRegleRepository repository_regle{databasePath};
+    babyfoot::infra::SqliteMatchRepository repository_match{databasePath};
 
     //objets de gestion métiers des regles, et des joueurs
     babyfoot::core::PlayerService playerService{repository};
     babyfoot::core::RegleService regleService{repository_regle};
+    babyfoot::core::MatchService matchService{repository_match};
 
     playerService.initialize();
     regleService.initialize();
+    matchService.initialize();
 
     // ajouter par défaut des joueurs
     if (playerService.players().empty()) {
-        playerService.addPlayer(QStringLiteral("La gâchette"));
-        playerService.addPlayer(QStringLiteral("Le Striker"));
-        playerService.addPlayer(QStringLiteral("Le Guépard"));
-        playerService.addPlayer(QStringLiteral("Le Maçon"));
-        playerService.addPlayer(QStringLiteral("La Mouche"));
+        playerService.addPlayer(QStringLiteral("Bob"));
+        playerService.addPlayer(QStringLiteral("Alice"));
     }
 
     // faire le pont entre le UI(qml) et le cpp derrière
-    babyfoot::ui::AppController controller{playerService, regleService};
+    babyfoot::ui::AppController controller{
+        playerService, regleService, matchService
+    };
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(

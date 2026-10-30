@@ -25,6 +25,7 @@ qt_add_executable(babyfoot-app
     src/main.cpp
     src/infra/SqlitePlayerRepository.cpp
     src/infra/SqliteRegleRepository.cpp
+    src/infra/SqliteMatchRepository.cpp
     src/ui/AppController.cpp
 )
 
@@ -40,6 +41,8 @@ qt_add_qml_module(babyfoot-app
         src/ui/PlayerDetailsDialog.qml
         src/ui/Sidebar.qml
         src/ui/RegleView.qml
+        src/ui/MatchHistoryView.qml
+        src/ui/MatchDetailsDialog.qml
 )
 
 target_include_directories(babyfoot-app PRIVATE src)

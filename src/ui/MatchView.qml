@@ -14,10 +14,14 @@ Rectangle {
     property var teamAPlayers: []
     property var teamBPlayers: []
     property string winnerName: ""
+    property bool matchRecorded: false
+    property var matchStats: ({})
+    property var matchEvents: []
 
     // Gestion de la sélection du joueur et de la gamelle
     property string selectedPlayerName: ""
     property string selectedPlayerTeam: "" // "A" (Rouge) ou "B" (Bleu)
+    property int selectedPositionCode: 0
     property bool showGamelleDialog: false
     property string pendingCage: ""
 
@@ -53,9 +57,65 @@ Rectangle {
         winnerName = ""
         selectedPlayerName = ""
         selectedPlayerTeam = ""
+        selectedPositionCode = 0
         showGamelleDialog = false
         pendingCage = ""
+        matchRecorded = false
+        matchStats = ({})
+        matchEvents = []
         matchStarted = true
+    }
+
+    function recordPlayerEvent(name, eventName) {
+        if (!name) return
+        if (!matchStats[name]) {
+            matchStats[name] = { goals: 0, ownGoals: 0, gamelles: 0 }
+        }
+        matchStats[name][eventName] = (matchStats[name][eventName] || 0) + 1
+        matchEvents.push({
+            pseudo: name,
+            type: eventName === "goals" ? "goal" :
+                  (eventName === "ownGoals" ? "own_goal" : "gamelle"),
+            positionCode: selectedPositionCode
+        })
+    }
+
+    function recordMatchResult() {
+        if (matchRecorded || winnerName === "") return
+
+        var results = []
+        var winningTeam = winnerName === "ÉQUIPE ROUGE" ? teamAPlayers : teamBPlayers
+        var losingTeam = winnerName === "ÉQUIPE ROUGE" ? teamBPlayers : teamAPlayers
+
+        function appendResults(team, won) {
+            for (var i = 0; i < team.length; ++i) {
+                var name = team[i]
+                var stats = matchStats[name] || { goals: 0, ownGoals: 0, gamelles: 0 }
+                results.push({
+                    pseudo: name,
+                    team: team === teamAPlayers ? 1 : 2,
+                    goals: stats.goals || 0,
+                    ownGoals: stats.ownGoals || 0,
+                    gamelles: stats.gamelles || 0,
+                    win: won ? 1 : 0,
+                    loss: won ? 0 : 1
+                })
+            }
+        }
+
+        appendResults(winningTeam, true)
+        appendResults(losingTeam, false)
+
+        if (typeof appController !== "undefined" &&
+            typeof appController.recordMatch === "function") {
+            appController.recordMatch(gameMode, matchType === "Compétitif", {
+                teamAScore: teamAScore,
+                teamBScore: teamBScore,
+                participants: results,
+                events: matchEvents
+            })
+        }
+        matchRecorded = true
     }
 
     function getPlayerForRod(rodIndex) {
@@ -84,14 +144,27 @@ Rectangle {
         return rodIndex === 0 || rodIndex === 1 || rodIndex === 3 || rodIndex === 5
     }
 
-    function selectPlayer(name, team) {
+    function positionCodeForRod(rodIndex, figureIndex) {
+        if (rodIndex === 0 || rodIndex === 7)
+            return 1
+        if (rodIndex === 1 || rodIndex === 6)
+            return figureIndex === 0 ? 2 : 3
+        if (rodIndex === 2 || rodIndex === 5)
+            return figureIndex === 1 ? 10 :
+                   (figureIndex === 0 ? 9 : 11)
+        return 4 + figureIndex
+    }
+
+    function selectPlayer(name, team, rodIndex, figureIndex) {
         if (winnerName !== "" || !name) return
         if (selectedPlayerName === name) {
             selectedPlayerName = ""
             selectedPlayerTeam = ""
+            selectedPositionCode = 0
         } else {
             selectedPlayerName = name
             selectedPlayerTeam = team
+            selectedPositionCode = positionCodeForRod(rodIndex, figureIndex)
         }
     }
 
@@ -118,6 +191,8 @@ Rectangle {
             teamBScore++
             if (teamBScore >= winningScore) winnerName = "ÉQUIPE BLEUE"
         }
+        recordPlayerEvent(selectedPlayerName, "ownGoals")
+        recordMatchResult()
 
         // Appel backend C++ sécurisé
         if (typeof appController !== "undefined") {
@@ -130,6 +205,7 @@ Rectangle {
 
         selectedPlayerName = ""
         selectedPlayerTeam = ""
+        selectedPositionCode = 0
     }
 
     function applyGoalOption(optionType) {
@@ -146,13 +222,16 @@ Rectangle {
                 teamBScore++
                 if (teamBScore >= winningScore) winnerName = "ÉQUIPE BLEUE"
             }
+            recordPlayerEvent(selectedPlayerName, "goals")
         } else if (optionType === "GAMELLE_MINUS_ONE") {
             if (victimTeam === "A") {
                 teamAScore = Math.max(0, teamAScore - 1)
             } else {
                 teamBScore = Math.max(0, teamBScore - 1)
             }
+            recordPlayerEvent(selectedPlayerName, "gamelles")
         }
+        recordMatchResult()
 
         // Appel backend C++ sécurisé
         if (typeof appController !== "undefined") {
@@ -165,6 +244,7 @@ Rectangle {
 
         selectedPlayerName = ""
         selectedPlayerTeam = ""
+        selectedPositionCode = 0
         pendingCage = ""
     }
 
@@ -618,7 +698,7 @@ Rectangle {
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: view.selectPlayer(pName, rodTeam)
+                                    onClicked: view.selectPlayer(pName, rodTeam, rodIndex, index)
                                 }
                             }
                         }

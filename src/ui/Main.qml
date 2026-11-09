@@ -70,22 +70,34 @@ ApplicationWindow {
 
             RegleView {}
 
-            // Page 1 : Matchs (ex. feature/regle)
-            Rectangle { radius: 24; color: "#141A29"; border.color: "#222D42"; border.width: 1 }
+            // Page 2 : Matchs
+            MatchView {}
 
-            // Page 2 : Joueurs (ex. feature/joueur-mmr)
-            Rectangle { radius: 24; color: "#141A29"; border.color: "#222D42"; border.width: 1 }
+            // Page 3 : Joueurs
+            PlayerPanel {
+                onPlayerClicked: function(name) {
+                    if (typeof appController !== "undefined") {
+                        appController.selectPlayer(name)
+                    }
+                    playerDetailsDialog.open()
+                }
+            }
 
             // Page 3 : Classement
             Rectangle { radius: 24; color: "#141A29"; border.color: "#222D42"; border.width: 1 }
 
             // Page 4 : Historique
-            Rectangle { radius: 24; color: "#141A29"; border.color: "#222D42"; border.width: 1 }
+            MatchHistoryView {}
         }
     }
 
     PlayerDetailsDialog {
         id: playerDetailsDialog
+        parent: Overlay.overlay
+    }
+
+    MatchDetailsDialog {
+        id: matchDetailsDialog
         parent: Overlay.overlay
     }
 }

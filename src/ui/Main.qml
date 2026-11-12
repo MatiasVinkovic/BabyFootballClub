@@ -50,7 +50,9 @@ ApplicationWindow {
 
         Sidebar {
             currentIndex: root.currentPage
-            onCurrentIndexChanged: root.currentPage = currentIndex
+            onPageSelected: function(pageIndex) {
+                root.currentPage = pageIndex
+            }
         }
 
         StackLayout {
@@ -60,11 +62,14 @@ ApplicationWindow {
 
             // Page 0 : Accueil (Match + Inscription)
             HomeView {
-                onPlayerSelected: (name) => {
+                onPlayerSelected: function(name) {
                     if (typeof appController !== "undefined") {
                         appController.selectPlayer(name)
                     }
                     playerDetailsDialog.open()
+                }
+                onNavigateTo: function(pageIndex) {
+                    root.currentPage = pageIndex
                 }
             }
 

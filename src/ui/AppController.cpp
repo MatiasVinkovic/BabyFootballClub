@@ -251,8 +251,6 @@ void AppController::refreshPlayers() {
         players_.append(player.pseudo);
     }
     emit playersChanged();
-<<<<<<< Updated upstream
-=======
 }
 
 void AppController::refreshAfterMatch() {
@@ -316,7 +314,6 @@ void AppController::refreshTopPlayers() {
         });
     }
     emit topPlayersChanged();
->>>>>>> Stashed changes
 }
 
 void AppController::refreshRegles() {

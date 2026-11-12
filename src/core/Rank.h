@@ -1,76 +1,66 @@
 #pragma once
 
 #include <QString>
-#include <algorithm>
 
 namespace babyfoot::core {
 
 enum class Rank {
-    Unranked,
-    Bronze,
-    Silver,
-    Gold,
+    Bronze, 
+    Argent,
+    Or,
     Platine,
     Diamant,
-    Champion,
-    GrandChampion,
-    SSL
+    GuepardSupreme,
 };
 
 enum class Tier { None, I, II, III };
 
 struct PlayerRank {
-    Rank rank = Rank::Unranked;
-    Tier tier = Tier::None;
+    Rank rank = Rank::Bronze;
+    Tier tier = Tier::III;
 };
 
-namespace rank_config {
-    inline constexpr float kSslThreshold   = 1900.0f;
-    inline constexpr int   kRankedRanks    = 7;  
-    inline constexpr int   kTiersPerRank   = 3;
-    inline constexpr int   kTierCount      = kRankedRanks * kTiersPerRank;
-    inline constexpr float kTierWidth      = 80.0f;
-    inline constexpr float kFirstThreshold = kSslThreshold - kTierCount * kTierWidth; 
-}
-
 constexpr PlayerRank rankFromMMR(float mmr) {
-    using namespace rank_config;
+    // Sécurité si le mmr est un NaN
+    if (mmr != mmr) return { Rank::Bronze, Tier::III }; 
 
-    if (mmr != mmr)            return { Rank::Bronze, Tier::I }; 
-    if (mmr >= kSslThreshold)  return { Rank::SSL, Tier::None };
-    if (mmr < kFirstThreshold) return { Rank::Bronze, Tier::I };
+    // Les paliers n'étant plus linéaires, une simple descente conditionnelle 
+    // est la solution la plus lisible, performante et 100% constexpr.
+    if (mmr >= 2000.0f) return { Rank::GuepardSupreme, Tier::None };
 
-    int index = static_cast<int>((mmr - kFirstThreshold) / kTierWidth);
-    index = std::clamp(index, 0, kTierCount - 1);
+    if (mmr >= 1500.0f) return { Rank::Diamant, Tier::I };
+    if (mmr >= 1300.0f) return { Rank::Diamant, Tier::II };
+    if (mmr >= 1200.0f) return { Rank::Diamant, Tier::III };
 
-    return {
-        static_cast<Rank>(1 + index / kTiersPerRank),
-        static_cast<Tier>(1 + index % kTiersPerRank)
-    };
+    if (mmr >= 1000.0f) return { Rank::Platine, Tier::I };
+    if (mmr >= 850.0f) return { Rank::Platine, Tier::II };
+    if (mmr >= 800.0f) return { Rank::Platine, Tier::III };
+
+    if (mmr >= 600.0f) return { Rank::Or, Tier::I };
+    if (mmr >= 550.0f) return { Rank::Or, Tier::II };
+    if (mmr >= 500.0f) return { Rank::Or, Tier::III };
+
+    if (mmr >= 400.0f) return { Rank::Argent, Tier::I };
+    if (mmr >= 350.0f) return { Rank::Argent, Tier::II }; // Correction de la coquille (4 -> II)
+    if (mmr >= 300.0f) return { Rank::Argent, Tier::III }; // Correction de la coquille (5 -> III)
+
+    if (mmr >= 200.0f) return { Rank::Bronze, Tier::I };
+    if (mmr >= 150.0f) return { Rank::Bronze, Tier::II };
+
+    // Tout ce qui est en dessous de 150 (dont le palier à 100)
+    return { Rank::Bronze, Tier::III }; 
 }
-
-// Vérifications à la compilation : si tu changes les constantes, ça casse tout de suite
-static_assert(rankFromMMR(-50.f).rank   == Rank::Bronze);
-static_assert(rankFromMMR(220.f).tier   == Tier::I);
-static_assert(rankFromMMR(1000.f).rank  == Rank::Platine);
-static_assert(rankFromMMR(1899.99f).rank == Rank::GrandChampion);
-static_assert(rankFromMMR(1899.99f).tier == Tier::III);
-static_assert(rankFromMMR(1900.f).rank  == Rank::SSL);
-static_assert(rankFromMMR(5000.f).rank  == Rank::SSL);
 
 inline QString toString(Rank r) {
     switch (r) {
-        case Rank::Unranked:      return "Unranked";
-        case Rank::Bronze:        return "Bronze";
-        case Rank::Silver:        return "Silver";
-        case Rank::Gold:          return "Gold";
-        case Rank::Platine:       return "Platine";
-        case Rank::Diamant:       return "Diamant";
-        case Rank::Champion:      return "Champion";
-        case Rank::GrandChampion: return "Grand Champion";
-        case Rank::SSL:           return "SSL";
+        case Rank::Bronze:         return "Bronze";
+        case Rank::Argent:         return "Argent";
+        case Rank::Or:             return "Or";
+        case Rank::Platine:        return "Platine";
+        case Rank::Diamant:        return "Diamant";
+        case Rank::GuepardSupreme: return "Guépard Suprême";
     }
-    return "Unknown";
+    return "Inconnu";
 }
 
 inline QString toString(Tier t) {

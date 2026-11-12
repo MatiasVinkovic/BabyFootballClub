@@ -15,7 +15,7 @@ public:
     virtual ~IPlayerRepository() = default;
 
     virtual void init() = 0; // obligé à réaliser une implémentation complète
-    virtual std::vector<Player> getAll(GameMode mode) = 0;
+    virtual std::vector<Player> getAll(GameMode mode) = 0;  
     virtual Player add(const QString& pseudo) = 0; // ajouter un joueur dans la liste
     virtual bool recordMatch(const MatchRecord& match) = 0;
     virtual std::vector<int> getEventCounts(int playerId, GameMode mode,

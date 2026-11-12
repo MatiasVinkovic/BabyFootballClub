@@ -18,7 +18,7 @@ struct PlayerStats {
     int gamelles = 0;
     int victoires = 0;
     int defaites = 0;
-    int mmr = 1000;
+    int mmr = 100;
 
     int matchsJoues() const { return victoires + defaites; }
     int butsUtiles() const { return buts_marques - csc; }
@@ -54,7 +54,7 @@ struct Player {
 
     PlayerRank rank() const {
         if (!stats.competitive || stats.matchsJoues() == 0)
-            return { Rank::Unranked, Tier::None };
+            return {};
         return rankFromMMR(stats.mmr);
     }
 };

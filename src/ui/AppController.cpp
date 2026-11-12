@@ -16,6 +16,8 @@ AppController::AppController(babyfoot::core::PlayerService& playerService,
       regleService_{regleService},
       matchService_{matchService} {
     refreshPlayers();
+        refreshLeaderboard();
+        refreshTopPlayers();
     refreshRegles();
     refreshMatchHistory();
 }
@@ -100,6 +102,8 @@ void AppController::addPlayer(const QString& pseudo) {
     // playerService_.addPlayer attend déjà un QString !
     playerService_.addPlayer(pseudo.trimmed());
     refreshPlayers();
+    refreshLeaderboard();
+    refreshTopPlayers();
 }
 
 void AppController::addRegle(const QString& nom, const QString& contenu) {
@@ -220,8 +224,7 @@ bool AppController::recordMatch(int format, bool competitive,
     }
 
     if (playerService_.recordMatch(match)) {
-        refreshPlayers();
-        refreshMatchHistory();
+        refreshAfterMatch();
         return true;
     }
     return false;
@@ -277,6 +280,68 @@ void AppController::refreshLeaderboard() {
             {QStringLiteral("position"), position++},
             {QStringLiteral("pseudo"), player.pseudo},
             {QStringLiteral("mmr"), mmr}
+        });
+    }
+    emit leaderboardChanged();
+}
+
+void AppController::refreshTopPlayers() {
+    QMap<QString, int> winsByPlayer;
+    for (const int format : {1, 2}) {
+        for (const bool competitive : {false, true}) {
+            for (const auto& player : playerService_.players({format, competitive})) {
+                winsByPlayer[player.pseudo] += player.stats.victoires;
+            }
+        }
+    }
+
+    QList<QPair<QString, int>> players;
+    for (auto it = winsByPlayer.cbegin(); it != winsByPlayer.cend(); ++it) {
+        players.append(qMakePair(it.key(), it.value()));
+    }
+    std::sort(players.begin(), players.end(), [](const auto& left, const auto& right) {
+        return left.second == right.second ? left.first < right.first
+                                           : left.second > right.second;
+    });
+
+    topPlayers_.clear();
+    const int count = std::min(5, static_cast<int>(players.size()));
+    for (int i = 0; i < count; ++i) {
+        topPlayers_.push_back(QVariantMap{
+            {QStringLiteral("pseudo"), players[i].first},
+            {QStringLiteral("wins"), players[i].second}
+        });
+    }
+    emit topPlayersChanged();
+}
+
+void AppController::refreshAfterMatch() {
+    refreshPlayers();
+    refreshLeaderboard();
+    refreshTopPlayers();
+    refreshMatchHistory();
+
+    const QString selectedPseudo = selectedPlayer_.value(QStringLiteral("pseudo")).toString();
+    if (!selectedPseudo.isEmpty()) {
+        selectPlayer(selectedPseudo);
+    }
+}
+
+void AppController::refreshLeaderboard() {
+    auto players = playerService_.players({.format = 1, .competitive = false});
+    std::sort(players.begin(), players.end(), [](const auto& left, const auto& right) {
+        return left.mmr_1v1 == right.mmr_1v1
+            ? left.pseudo < right.pseudo
+            : left.mmr_1v1 > right.mmr_1v1;
+    });
+
+    leaderboard_.clear();
+    int position = 1;
+    for (const auto& player : players) {
+        leaderboard_.push_back(QVariantMap{
+            {QStringLiteral("position"), position++},
+            {QStringLiteral("pseudo"), player.pseudo},
+            {QStringLiteral("mmr"), player.mmr_1v1}
         });
     }
     emit leaderboardChanged();

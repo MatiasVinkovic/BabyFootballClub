@@ -7,6 +7,7 @@ Rectangle {
     id: control
 
     property int currentIndex: 0
+    signal pageSelected(int pageIndex)
 
     Layout.fillHeight: true
     Layout.preferredWidth: 160
@@ -70,7 +71,7 @@ Rectangle {
                 required property var modelData
                 Layout.fillWidth: true
                 Layout.preferredHeight: 46
-                onClicked: control.currentIndex = index
+                onClicked: control.pageSelected(index)
 
                 contentItem: RowLayout {
                     spacing: 10

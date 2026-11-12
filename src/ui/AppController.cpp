@@ -2,6 +2,7 @@
 
 #include <QDebug>
 
+#include <algorithm>
 #include <utility>
 
 namespace babyfoot::ui {
@@ -166,6 +167,14 @@ void AppController::setStatsMode(int format, bool competitive) {
     emit statsModeChanged();
 }
 
+void AppController::setLeaderboardMode(bool ranked) {
+    if (leaderboardRanked_ == ranked) {
+        return;
+    }
+    leaderboardRanked_ = ranked;
+    refreshLeaderboard();
+}
+
 bool AppController::recordMatch(int format, bool competitive,
                                  const QVariantMap& matchData) {
     if (format != 1 && format != 2) {
@@ -251,6 +260,59 @@ void AppController::refreshPlayers() {
         players_.append(player.pseudo);
     }
     emit playersChanged();
+    refreshLeaderboard();
+    refreshTopPlayers();
+}
+
+void AppController::refreshLeaderboard() {
+    auto players = playerService_.players({.format = 1, .competitive = leaderboardRanked_});
+    std::sort(players.begin(), players.end(), [this](const auto& left, const auto& right) {
+        const int leftMmr = leaderboardRanked_ ? left.mmr_ranked : left.mmr_casual;
+        const int rightMmr = leaderboardRanked_ ? right.mmr_ranked : right.mmr_casual;
+        return leftMmr == rightMmr ? left.pseudo < right.pseudo : leftMmr > rightMmr;
+    });
+
+    leaderboard_.clear();
+    int position = 1;
+    for (const auto& player : players) {
+        const int mmr = leaderboardRanked_ ? player.mmr_ranked : player.mmr_casual;
+        leaderboard_.push_back(QVariantMap{
+            {QStringLiteral("position"), position++},
+            {QStringLiteral("pseudo"), player.pseudo},
+            {QStringLiteral("mmr"), mmr}
+        });
+    }
+    emit leaderboardChanged();
+}
+
+void AppController::refreshTopPlayers() {
+    QMap<QString, int> winsByPlayer;
+    for (const int format : {1, 2}) {
+        for (const bool competitive : {false, true}) {
+            for (const auto& player : playerService_.players({format, competitive})) {
+                winsByPlayer[player.pseudo] += player.stats.victoires;
+            }
+        }
+    }
+
+    QList<QPair<QString, int>> players;
+    for (auto it = winsByPlayer.cbegin(); it != winsByPlayer.cend(); ++it) {
+        players.append(qMakePair(it.key(), it.value()));
+    }
+    std::sort(players.begin(), players.end(), [](const auto& left, const auto& right) {
+        return left.second == right.second ? left.first < right.first
+                                           : left.second > right.second;
+    });
+
+    topPlayers_.clear();
+    const int count = std::min(5, static_cast<int>(players.size()));
+    for (int i = 0; i < count; ++i) {
+        topPlayers_.push_back(QVariantMap{
+            {QStringLiteral("pseudo"), players[i].first},
+            {QStringLiteral("wins"), players[i].second}
+        });
+    }
+    emit topPlayersChanged();
 }
 
 void AppController::refreshAfterMatch() {

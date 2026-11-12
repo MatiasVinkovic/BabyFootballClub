@@ -54,7 +54,7 @@ struct Player {
 
     PlayerRank rank() const {
         if (!stats.competitive || stats.matchsJoues() == 0)
-            return { Rank::Unranked, Tier::None };
+            return {};
         return rankFromMMR(stats.mmr);
     }
 };

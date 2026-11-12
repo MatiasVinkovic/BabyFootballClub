@@ -18,6 +18,8 @@ class AppController final : public QObject {
     Q_PROPERTY(QVariantMap selectedPlayer READ selectedPlayer NOTIFY selectedPlayerChanged)
     Q_PROPERTY(QVariantList regles READ regles NOTIFY reglesChanged) // Uniformisé sur regles
     Q_PROPERTY(QVariantList matchHistory READ matchHistory NOTIFY matchHistoryChanged)
+    Q_PROPERTY(QVariantList leaderboard READ leaderboard NOTIFY leaderboardChanged)
+    Q_PROPERTY(bool leaderboardRanked READ leaderboardRanked NOTIFY leaderboardChanged)
     Q_PROPERTY(int statsFormat READ statsFormat NOTIFY statsModeChanged)
     Q_PROPERTY(bool statsCompetitive READ statsCompetitive NOTIFY statsModeChanged)
 
@@ -30,6 +32,8 @@ public:
     QStringList players() const;
     QVariantList regles() const; // Retourne bien un QVariantList
     QVariantList matchHistory() const { return matchHistory_; }
+    QVariantList leaderboard() const { return leaderboard_; }
+    bool leaderboardRanked() const { return leaderboardRanked_; }
 
     int counter() const { return counter_; }
     QVariantMap selectedPlayer() const { return selectedPlayer_; }
@@ -41,6 +45,7 @@ public:
     Q_INVOKABLE void incrementCounter();
     Q_INVOKABLE void addRegle(const QString& nom, const QString& contenu); // addRegle
     Q_INVOKABLE void setStatsMode(int format, bool competitive);
+    Q_INVOKABLE void setLeaderboardMode(bool ranked);
     Q_INVOKABLE bool recordMatch(int format, bool competitive,
                                  const QVariantMap& matchData);
     Q_INVOKABLE QVariantList positionEventCounts(const QString& pseudo,
@@ -54,11 +59,13 @@ signals:
     void reglesChanged();
     void statsModeChanged();
     void matchHistoryChanged();
+    void leaderboardChanged();
 
 private:
     void refreshPlayers();
     void refreshRegles();
     void refreshMatchHistory();
+    void refreshLeaderboard();
 
     babyfoot::core::PlayerService& playerService_;
     babyfoot::core::RegleService& regleService_;
@@ -68,8 +75,10 @@ private:
     QVariantMap selectedPlayer_;
     QVariantList regles_; // Stockage interne de la liste des règles
     QVariantList matchHistory_;
+    QVariantList leaderboard_;
     int counter_ = 0;
     babyfoot::core::GameMode statsMode_;
+    bool leaderboardRanked_ = false;
 };
 
 }

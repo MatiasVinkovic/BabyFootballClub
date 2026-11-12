@@ -84,7 +84,14 @@ ApplicationWindow {
             }
 
             // Page 3 : Classement
-            Rectangle { radius: 24; color: "#141A29"; border.color: "#222D42"; border.width: 1 }
+            RankingView {
+                onPlayerClicked: function(name) {
+                    if (typeof appController !== "undefined") {
+                        appController.selectPlayer(name)
+                    }
+                    playerDetailsDialog.open()
+                }
+            }
 
             // Page 4 : Historique
             MatchHistoryView {}

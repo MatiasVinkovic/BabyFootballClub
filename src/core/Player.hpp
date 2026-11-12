@@ -18,7 +18,7 @@ struct PlayerStats {
     int gamelles = 0;
     int victoires = 0;
     int defaites = 0;
-    int mmr = 1000;
+    int mmr = 100;
 
     int matchsJoues() const { return victoires + defaites; }
     int butsUtiles() const { return buts_marques - csc; }
@@ -48,8 +48,8 @@ struct MatchRecord {
 struct Player {
     int id = 0;
     QString pseudo;
-    int mmr_1v1 = 1000;
-    int mmr_2v2 = 1000;
+    int mmr_1v1 = 100;
+    int mmr_2v2 = 100;
     PlayerStats stats;
 
     PlayerRank rank() const {

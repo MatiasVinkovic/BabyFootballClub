@@ -258,6 +258,7 @@ void AppController::refreshPlayers() {
     }
     emit playersChanged();
     refreshLeaderboard();
+    refreshTopPlayers();
 }
 
 void AppController::refreshLeaderboard() {
@@ -279,6 +280,36 @@ void AppController::refreshLeaderboard() {
         });
     }
     emit leaderboardChanged();
+}
+
+void AppController::refreshTopPlayers() {
+    QMap<QString, int> winsByPlayer;
+    for (const int format : {1, 2}) {
+        for (const bool competitive : {false, true}) {
+            for (const auto& player : playerService_.players({format, competitive})) {
+                winsByPlayer[player.pseudo] += player.stats.victoires;
+            }
+        }
+    }
+
+    QList<QPair<QString, int>> players;
+    for (auto it = winsByPlayer.cbegin(); it != winsByPlayer.cend(); ++it) {
+        players.append(qMakePair(it.key(), it.value()));
+    }
+    std::sort(players.begin(), players.end(), [](const auto& left, const auto& right) {
+        return left.second == right.second ? left.first < right.first
+                                           : left.second > right.second;
+    });
+
+    topPlayers_.clear();
+    const int count = std::min(5, static_cast<int>(players.size()));
+    for (int i = 0; i < count; ++i) {
+        topPlayers_.push_back(QVariantMap{
+            {QStringLiteral("pseudo"), players[i].first},
+            {QStringLiteral("wins"), players[i].second}
+        });
+    }
+    emit topPlayersChanged();
 }
 
 void AppController::refreshRegles() {

@@ -19,6 +19,7 @@ class AppController final : public QObject {
     Q_PROPERTY(QVariantList regles READ regles NOTIFY reglesChanged) // Uniformisé sur regles
     Q_PROPERTY(QVariantList matchHistory READ matchHistory NOTIFY matchHistoryChanged)
     Q_PROPERTY(QVariantList leaderboard READ leaderboard NOTIFY leaderboardChanged)
+    Q_PROPERTY(QVariantList topPlayers READ topPlayers NOTIFY topPlayersChanged)
     Q_PROPERTY(bool leaderboardRanked READ leaderboardRanked NOTIFY leaderboardChanged)
     Q_PROPERTY(int statsFormat READ statsFormat NOTIFY statsModeChanged)
     Q_PROPERTY(bool statsCompetitive READ statsCompetitive NOTIFY statsModeChanged)
@@ -33,6 +34,7 @@ public:
     QVariantList regles() const; // Retourne bien un QVariantList
     QVariantList matchHistory() const { return matchHistory_; }
     QVariantList leaderboard() const { return leaderboard_; }
+    QVariantList topPlayers() const { return topPlayers_; }
     bool leaderboardRanked() const { return leaderboardRanked_; }
 
     int counter() const { return counter_; }
@@ -60,12 +62,14 @@ signals:
     void statsModeChanged();
     void matchHistoryChanged();
     void leaderboardChanged();
+    void topPlayersChanged();
 
 private:
     void refreshPlayers();
     void refreshRegles();
     void refreshMatchHistory();
     void refreshLeaderboard();
+    void refreshTopPlayers();
 
     babyfoot::core::PlayerService& playerService_;
     babyfoot::core::RegleService& regleService_;
@@ -76,6 +80,7 @@ private:
     QVariantList regles_; // Stockage interne de la liste des règles
     QVariantList matchHistory_;
     QVariantList leaderboard_;
+    QVariantList topPlayers_;
     int counter_ = 0;
     babyfoot::core::GameMode statsMode_;
     bool leaderboardRanked_ = false;

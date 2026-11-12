@@ -59,6 +59,9 @@ private:
     void refreshPlayers();
     void refreshRegles();
     void refreshMatchHistory();
+    void refreshLeaderboard();
+    void refreshTopPlayers();
+    void refreshAfterMatch();
 
     babyfoot::core::PlayerService& playerService_;
     babyfoot::core::RegleService& regleService_;

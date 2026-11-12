@@ -13,6 +13,8 @@ Rectangle {
     property int teamBScore: 0
     property var teamAPlayers: []
     property var teamBPlayers: []
+    property string teamADefender: ""
+    property string teamBDefender: ""
     property string winnerName: ""
     property bool matchRecorded: false
     property var matchStats: ({})
@@ -52,6 +54,8 @@ Rectangle {
     function startMatch() {
         teamAPlayers = gameMode === 1 ? [teamA1.currentText || ""] : [teamA1.currentText || "", teamA2.currentText || ""]
         teamBPlayers = gameMode === 1 ? [teamB1.currentText || ""] : [teamB1.currentText || "", teamB2.currentText || ""]
+        teamADefender = teamAPlayers[0] || ""
+        teamBDefender = teamBPlayers[0] || ""
         teamAScore = 0
         teamBScore = 0
         winnerName = ""
@@ -127,15 +131,15 @@ Rectangle {
             var pB = teamBPlayers[0] || ""
             return isRedRod(rodIndex) ? pA : pB
         } else {
-            var pA1 = teamAPlayers[0] || ""
-            var pA2 = teamAPlayers[1] || pA1
-            var pB1 = teamBPlayers[0] || ""
-            var pB2 = teamBPlayers[1] || pB1
+            var teamAAttacker = teamAPlayers[0] === teamADefender
+                ? (teamAPlayers[1] || "") : (teamAPlayers[0] || "")
+            var teamBAttacker = teamBPlayers[0] === teamBDefender
+                ? (teamBPlayers[1] || "") : (teamBPlayers[0] || "")
 
-            if (rodIndex === 0 || rodIndex === 1) return pA1
-            if (rodIndex === 3 || rodIndex === 5) return pA2
-            if (rodIndex === 6 || rodIndex === 7) return pB1
-            if (rodIndex === 2 || rodIndex === 4) return pB2
+            if (rodIndex === 0 || rodIndex === 1) return teamADefender
+            if (rodIndex === 3 || rodIndex === 5) return teamAAttacker
+            if (rodIndex === 6 || rodIndex === 7) return teamBDefender
+            if (rodIndex === 2 || rodIndex === 4) return teamBAttacker
         }
         return ""
     }
@@ -488,7 +492,7 @@ Rectangle {
         // Tableau de bord supérieur
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: 56
+            Layout.preferredHeight: view.gameMode === 2 ? 92 : 56
             color: "#1E293B"
             radius: 14
             border.color: "#334155"
@@ -498,14 +502,44 @@ Rectangle {
                 anchors.leftMargin: 20
                 anchors.rightMargin: 20
 
-                RowLayout {
-                    spacing: 10
-                    Rectangle { width: 14; height: 14; radius: 7; color: "#EF4444" }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 3
+
                     Label {
-                        text: view.teamAPlayers.join(" & ")
+                        Layout.fillWidth: true
+                        text: "🔴 " + view.teamAPlayers.join(" & ")
                         color: "white"
-                        font.pixelSize: 15
+                        font.pixelSize: 13
                         font.bold: true
+                        elide: Text.ElideRight
+                    }
+
+                    RowLayout {
+                        visible: view.gameMode === 2
+                        spacing: 6
+                        Label { text: "Défense"; color: "#FCA5A5"; font.pixelSize: 11 }
+                        ComboBox {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 30
+                            model: view.teamAPlayers
+                            currentIndex: Math.max(0, view.teamAPlayers.indexOf(view.teamADefender))
+                            onActivated: {
+                                view.teamADefender = currentText
+                                view.selectedPlayerName = ""
+                                view.selectedPlayerTeam = ""
+                                view.selectedPositionCode = 0
+                            }
+                        }
+                    }
+
+                    Label {
+                        visible: view.gameMode === 2
+                        text: "Attaque  " + (view.teamAPlayers[0] === view.teamADefender
+                              ? (view.teamAPlayers[1] || "") : (view.teamAPlayers[0] || ""))
+                        color: "#FCA5A5"
+                        font.pixelSize: 11
+                        elide: Text.ElideRight
                     }
                 }
 
@@ -530,15 +564,52 @@ Rectangle {
 
                 Item { Layout.fillWidth: true }
 
-                RowLayout {
-                    spacing: 10
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 3
+
                     Label {
-                        text: view.teamBPlayers.join(" & ")
+                        Layout.fillWidth: true
+                        text: view.teamBPlayers.join(" & ") + " 🔵"
                         color: "white"
-                        font.pixelSize: 15
+                        font.pixelSize: 13
                         font.bold: true
+                        horizontalAlignment: Text.AlignRight
+                        elide: Text.ElideLeft
                     }
-                    Rectangle { width: 14; height: 14; radius: 7; color: "#3B82F6" }
+
+                    RowLayout {
+                        visible: view.gameMode === 2
+                        spacing: 6
+                        Label {
+                            text: "Défense"
+                            color: "#93C5FD"
+                            font.pixelSize: 11
+                        }
+                        ComboBox {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 30
+                            model: view.teamBPlayers
+                            currentIndex: Math.max(0, view.teamBPlayers.indexOf(view.teamBDefender))
+                            onActivated: {
+                                view.teamBDefender = currentText
+                                view.selectedPlayerName = ""
+                                view.selectedPlayerTeam = ""
+                                view.selectedPositionCode = 0
+                            }
+                        }
+                    }
+
+                    Label {
+                        visible: view.gameMode === 2
+                        Layout.fillWidth: true
+                        text: "Attaque  " + (view.teamBPlayers[0] === view.teamBDefender
+                              ? (view.teamBPlayers[1] || "") : (view.teamBPlayers[0] || ""))
+                        color: "#93C5FD"
+                        font.pixelSize: 11
+                        horizontalAlignment: Text.AlignRight
+                        elide: Text.ElideLeft
+                    }
                 }
             }
         }

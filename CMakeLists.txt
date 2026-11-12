@@ -43,6 +43,7 @@ qt_add_qml_module(babyfoot-app
         src/ui/RegleView.qml
         src/ui/MatchHistoryView.qml
         src/ui/MatchDetailsDialog.qml
+        src/ui/RankingView.qml
 )
 
 target_include_directories(babyfoot-app PRIVATE src)

@@ -54,8 +54,6 @@ struct Player {
     PlayerStats stats;
 
     PlayerRank rank() const {
-        if (!stats.competitive || stats.matchsJoues() == 0)
-            return {};
         return rankFromMMR(stats.mmr);
     }
 };

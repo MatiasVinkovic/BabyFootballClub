@@ -128,6 +128,7 @@ void AppController::selectPlayer(const QString& pseudo) {
             {QStringLiteral("pseudo"), player.pseudo},
             {QStringLiteral("mmr"), player.stats.mmr},
             {QStringLiteral("rank"), babyfoot::core::toString(player.rank())},
+            {QStringLiteral("rankIcon"), babyfoot::core::rankIconUrl(player.rank().rank)},
             {QStringLiteral("goals"), player.stats.buts_marques},
             {QStringLiteral("ownGoals"), player.stats.csc},
             {QStringLiteral("usefulGoals"), player.stats.butsUtiles()},

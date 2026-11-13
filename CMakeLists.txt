@@ -32,6 +32,13 @@ qt_add_executable(babyfoot-app
 qt_add_qml_module(babyfoot-app
     URI Babyfoot
     VERSION 1.0
+    RESOURCES
+        icons/argent.png
+        icons/bronze.png
+        icons/diamant.png
+        icons/guepard_supreme.png
+        icons/or.png
+        icons/platine.png
     QML_FILES
         src/ui/Main.qml
         src/ui/HomeView.qml

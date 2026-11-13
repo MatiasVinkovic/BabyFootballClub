@@ -68,11 +68,24 @@ Dialog {
                     elide: Text.ElideRight
                 }
 
-                Label {
-                    text: (typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.rank || "Unranked") : "Unranked"
-                    color: "#00E5FF"
-                    font.pixelSize: 14
-                    font.bold: true
+                RowLayout {
+                    spacing: 6
+
+                    Image {
+                        Layout.preferredWidth: 24
+                        Layout.preferredHeight: 24
+                        source: appController.selectedPlayer.rankIcon || ""
+                        sourceSize.width: 48
+                        sourceSize.height: 48
+                        fillMode: Image.PreserveAspectFit
+                    }
+
+                    Label {
+                        text: (typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.rank || "Unranked") : "Unranked"
+                        color: "#00E5FF"
+                        font.pixelSize: 14
+                        font.bold: true
+                    }
                 }
             }
 
@@ -287,11 +300,24 @@ Dialog {
                     color: "#2C3B59"
                 }
 
-                Label {
-                    text: (typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.rank || "Unranked") : "Unranked"
-                    color: "#00E5FF"
-                    font.pixelSize: 20
-                    font.bold: true
+                RowLayout {
+                    spacing: 10
+
+                    Image {
+                        Layout.preferredWidth: 40
+                        Layout.preferredHeight: 40
+                        source: appController.selectedPlayer.rankIcon || ""
+                        sourceSize.width: 80
+                        sourceSize.height: 80
+                        fillMode: Image.PreserveAspectFit
+                    }
+
+                    Label {
+                        text: (typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.rank || "Unranked") : "Unranked"
+                        color: "#00E5FF"
+                        font.pixelSize: 20
+                        font.bold: true
+                    }
                 }
             }
         }

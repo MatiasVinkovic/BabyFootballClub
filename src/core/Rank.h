@@ -63,6 +63,18 @@ inline QString toString(Rank r) {
     return "Inconnu";
 }
 
+inline QString rankIconUrl(Rank r) {
+    switch (r) {
+        case Rank::Bronze:         return "qrc:/qt/qml/Babyfoot/icons/bronze.png";
+        case Rank::Argent:         return "qrc:/qt/qml/Babyfoot/icons/argent.png";
+        case Rank::Or:             return "qrc:/qt/qml/Babyfoot/icons/or.png";
+        case Rank::Platine:        return "qrc:/qt/qml/Babyfoot/icons/platine.png";
+        case Rank::Diamant:        return "qrc:/qt/qml/Babyfoot/icons/diamant.png";
+        case Rank::GuepardSupreme: return "qrc:/qt/qml/Babyfoot/icons/guepard_supreme.png";
+    }
+    return {};
+}
+
 inline QString toString(Tier t) {
     switch (t) {
         case Tier::None: return "";

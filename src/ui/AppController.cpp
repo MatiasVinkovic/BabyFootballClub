@@ -359,7 +359,7 @@ void AppController::refreshTopPlayers() {
         }
     }
 
-
+}
 
 void AppController::refreshRegles() {
     regles_.clear();

@@ -1,9 +1,11 @@
 #include "ui/AppController.hpp"
 
 #include <QDebug>
-
+#include <map>
 #include <algorithm>
 #include <utility>
+
+#include "core/Rank.h"
 
 namespace babyfoot::ui {
 
@@ -175,12 +177,12 @@ void AppController::setLeaderboardMode(bool ranked) {
     refreshLeaderboard();
 }
 
-bool AppController::recordMatch(int format, bool competitive,
-                                 const QVariantMap& matchData) {
+QVariantList AppController::recordMatch(int format, bool competitive,
+                                        const QVariantMap& matchData) {
     if (format != 1 && format != 2) {
-        qWarning() << "Format de match invalide :" << format;
-        return false;
-    }
+    qWarning() << "Format de match invalide :" << format;
+    return {};            // avant : return false;
+}
 
     const babyfoot::core::GameMode mode{format, competitive};
     babyfoot::core::MatchRecord match;
@@ -189,6 +191,13 @@ bool AppController::recordMatch(int format, bool competitive,
     match.teamAScore = matchData.value(QStringLiteral("teamAScore")).toInt();
     match.teamBScore = matchData.value(QStringLiteral("teamBScore")).toInt();
 
+    match.winningScore = matchData.value(QStringLiteral("winningScore"), 5).toInt();
+    if (match.winningScore < 1 || match.winningScore > 10 ||
+        (competitive && match.winningScore != 3 && match.winningScore != 5)) {
+        qWarning() << "Nombre de points gagnants invalide :" << match.winningScore;
+        return {};            // avant : return false;
+    }
+
     const QVariantList participants = matchData.value(
         QStringLiteral("participants")).toList();
     for (const QVariant& result : participants) {
@@ -196,7 +205,7 @@ bool AppController::recordMatch(int format, bool competitive,
         const QString pseudo = values.value(QStringLiteral("pseudo")).toString();
         if (pseudo.isEmpty()) {
             qWarning() << "Résultat de match sans joueur.";
-            return false;
+            return {};
         }
 
         babyfoot::core::MatchParticipant participant;
@@ -218,16 +227,58 @@ bool AppController::recordMatch(int format, bool competitive,
         event.positionCode = eventMap.value(QStringLiteral("positionCode")).toInt();
         if (event.positionCode < 1 || event.positionCode > 11) {
             qWarning() << "Code de position invalide pour :" << event.pseudo;
-            return false;
+            return {};
         }
         match.events.push_back(event);
     }
 
-    if (playerService_.recordMatch(match)) {
-        refreshAfterMatch();
-        return true;
+    // CODE POUR ANIMATION DE FIN DE MATCH
+    std::map<int, QString> pseudoById;
+    for (const auto& player : playerService_.players(mode)) {
+        pseudoById[player.id] = player.pseudo;
     }
-    return false;
+
+    const auto changes = playerService_.recordMatch(match);
+    if (!changes) {
+        return {};
+    }
+
+    QVariantList results;
+    for (const auto& change : *changes) {
+        const QString pseudo = pseudoById[change.playerId];
+
+        int team = 0;
+        bool won = false;
+        for (const auto& participant : match.participants) {
+            if (participant.pseudo == pseudo) {
+                team = participant.team;
+                won = participant.won;
+                break;
+            }
+        }
+
+        const int oldMmr = change.newMmr - change.delta;
+        QString oldRank;
+        QString newRank;
+        if (competitive) {
+            oldRank = babyfoot::core::toString(babyfoot::core::rankFromMMR(oldMmr));
+            newRank = babyfoot::core::toString(babyfoot::core::rankFromMMR(change.newMmr));
+        }
+
+        results.push_back(QVariantMap{
+            {QStringLiteral("pseudo"), pseudo},
+            {QStringLiteral("team"), team},
+            {QStringLiteral("won"), won},
+            {QStringLiteral("oldMmr"), oldMmr},
+            {QStringLiteral("newMmr"), change.newMmr},
+            {QStringLiteral("delta"), change.delta},
+            {QStringLiteral("oldRank"), oldRank},
+            {QStringLiteral("newRank"), newRank}
+        });
+    }
+
+    refreshAfterMatch();
+    return results;
 }
 
 QVariantList AppController::positionEventCounts(const QString& pseudo,
@@ -327,55 +378,8 @@ void AppController::refreshAfterMatch() {
     }
 }
 
-void AppController::refreshLeaderboard() {
-    auto players = playerService_.players({.format = 1, .competitive = false});
-    std::sort(players.begin(), players.end(), [](const auto& left, const auto& right) {
-        return left.mmr_1v1 == right.mmr_1v1
-            ? left.pseudo < right.pseudo
-            : left.mmr_1v1 > right.mmr_1v1;
-    });
 
-    leaderboard_.clear();
-    int position = 1;
-    for (const auto& player : players) {
-        leaderboard_.push_back(QVariantMap{
-            {QStringLiteral("position"), position++},
-            {QStringLiteral("pseudo"), player.pseudo},
-            {QStringLiteral("mmr"), player.mmr_1v1}
-        });
-    }
-    emit leaderboardChanged();
-}
 
-void AppController::refreshTopPlayers() {
-    QMap<QString, int> winsByPlayer;
-    for (const int format : {1, 2}) {
-        for (const bool competitive : {false, true}) {
-            for (const auto& player : playerService_.players({format, competitive})) {
-                winsByPlayer[player.pseudo] += player.stats.victoires;
-            }
-        }
-    }
-
-    QList<QPair<QString, int>> players;
-    for (auto it = winsByPlayer.cbegin(); it != winsByPlayer.cend(); ++it) {
-        players.append(qMakePair(it.key(), it.value()));
-    }
-    std::sort(players.begin(), players.end(), [](const auto& left, const auto& right) {
-        return left.second == right.second ? left.first < right.first
-                                           : left.second > right.second;
-    });
-
-    topPlayers_.clear();
-    const int count = std::min(5, static_cast<int>(players.size()));
-    for (int i = 0; i < count; ++i) {
-        topPlayers_.push_back(QVariantMap{
-            {QStringLiteral("pseudo"), players[i].first},
-            {QStringLiteral("wins"), players[i].second}
-        });
-    }
-    emit topPlayersChanged();
-}
 
 void AppController::refreshRegles() {
     regles_.clear();

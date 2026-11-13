@@ -2,7 +2,8 @@
 
 #include <QString>
 #include <vector>
-
+#include <optional>
+#include "core/MmrService.hpp"
 #include "core/Player.hpp"
 
 // classe qui fait la partie gestion des joueurs
@@ -17,7 +18,8 @@ public:
     virtual void init() = 0; // obligé à réaliser une implémentation complète
     virtual std::vector<Player> getAll(GameMode mode) = 0;  
     virtual Player add(const QString& pseudo) = 0; // ajouter un joueur dans la liste
-    virtual bool recordMatch(const MatchRecord& match) = 0;
+    //virtual bool recordMatch(const MatchRecord& match) = 0;
+    virtual std::optional<std::vector<MmrChange>> recordMatch(const MatchRecord& match) = 0;
     virtual std::vector<int> getEventCounts(int playerId, GameMode mode,
                                              const QString& eventType) = 0;
 };
@@ -39,7 +41,11 @@ class PlayerService {
             return repository_.add(pseudo);
         }
 
-        bool recordMatch(const MatchRecord& match) {
+        //bool recordMatch(const MatchRecord& match) {
+          //  return repository_.recordMatch(match);
+        //}
+
+        std::optional<std::vector<MmrChange>> recordMatch(const MatchRecord& match) {
             return repository_.recordMatch(match);
         }
 

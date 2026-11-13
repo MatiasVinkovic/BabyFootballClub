@@ -39,6 +39,7 @@ struct MatchEvent {
 
 struct MatchRecord {
     GameMode mode;
+    int winningScore = 5;      // <-- nouveau
     int teamAScore = 0;
     int teamBScore = 0;
     std::vector<MatchParticipant> participants;

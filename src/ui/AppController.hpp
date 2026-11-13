@@ -48,8 +48,8 @@ public:
     Q_INVOKABLE void addRegle(const QString& nom, const QString& contenu); // addRegle
     Q_INVOKABLE void setStatsMode(int format, bool competitive);
     Q_INVOKABLE void setLeaderboardMode(bool ranked);
-    Q_INVOKABLE bool recordMatch(int format, bool competitive,
-                                 const QVariantMap& matchData);
+    Q_INVOKABLE QVariantList recordMatch(int format, bool competitive,
+                                     const QVariantMap& matchData);
     Q_INVOKABLE QVariantList positionEventCounts(const QString& pseudo,
                                                   const QString& eventType);
     Q_INVOKABLE QVariantMap matchDetails(int matchId);

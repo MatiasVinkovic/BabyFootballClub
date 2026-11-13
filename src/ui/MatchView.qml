@@ -26,6 +26,7 @@ Rectangle {
     property int selectedPositionCode: 0
     property bool showGamelleDialog: false
     property string pendingCage: ""
+    property var mmrResults: []
 
     radius: 20
     color: "#0F172A"
@@ -67,8 +68,97 @@ Rectangle {
         matchRecorded = false
         matchStats = ({})
         matchEvents = []
+        mmrResults = []
         matchStarted = true
     }
+
+    Component {
+    id: mmrRowComponent
+
+    Rectangle {
+        id: row
+        property var r: modelData
+        property real shownMmr: r.oldMmr
+        property bool deltaVisible: false
+        readonly property bool rankChanged: r.newRank !== "" && r.newRank !== r.oldRank
+
+        width: 250
+        height: 58
+        radius: 12
+        color: "#1E293B"
+        border.width: 2
+        border.color: r.team === 1 ? "#EF4444" : "#3B82F6"
+        opacity: 0
+        transform: Translate { id: shift; y: 24 }
+
+        Column {
+            anchors.left: parent.left
+            anchors.leftMargin: 12
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 2
+
+            Text {
+                text: r.pseudo + (r.won ? "  🏆" : "")
+                color: "white"
+                font.bold: true
+                font.pixelSize: 14
+            }
+            Text {
+                visible: r.newRank !== ""
+                text: row.rankChanged ? r.oldRank + "  →  " + r.newRank : r.newRank
+                color: row.rankChanged ? "#FACC15" : "#94A3B8"
+                font.bold: row.rankChanged
+                font.pixelSize: 11
+            }
+        }
+
+        Column {
+            anchors.right: parent.right
+            anchors.rightMargin: 12
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 0
+
+            Text {
+                anchors.right: parent.right
+                text: Math.round(row.shownMmr) + " MMR"
+                color: "#E2E8F0"
+                font.pixelSize: 13
+            }
+            Text {
+                anchors.right: parent.right
+                text: (r.delta >= 0 ? "+" : "") + r.delta
+                color: r.delta >= 0 ? "#22C55E" : "#EF4444"
+                font.bold: true
+                font.pixelSize: 20
+                opacity: row.deltaVisible ? 1 : 0
+                scale: row.deltaVisible ? 1 : 0.3
+                Behavior on scale { NumberAnimation { duration: 450; easing.type: Easing.OutBack } }
+                Behavior on opacity { NumberAnimation { duration: 200 } }
+            }
+        }
+
+        SequentialAnimation {
+            id: anim
+            // Apparition en cascade : rouge puis bleu, un joueur après l'autre
+            PauseAnimation { duration: 500 + (r.team - 1) * 150 + index * 350 }
+            ParallelAnimation {
+                NumberAnimation { target: row; property: "opacity"; to: 1; duration: 250 }
+                NumberAnimation { target: shift; property: "y"; to: 0; duration: 300; easing.type: Easing.OutCubic }
+            }
+            ScriptAction { script: row.deltaVisible = true }
+            // Le compteur MMR défile de l'ancienne à la nouvelle valeur
+            NumberAnimation {
+                target: row
+                property: "shownMmr"
+                to: r.newMmr
+                duration: 1200
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        Component.onCompleted: anim.start()
+    }
+}
 
     function recordPlayerEvent(name, eventName) {
         if (!name) return
@@ -112,12 +202,14 @@ Rectangle {
 
         if (typeof appController !== "undefined" &&
             typeof appController.recordMatch === "function") {
-            appController.recordMatch(gameMode, matchType === "Compétitif", {
+            var res = appController.recordMatch(gameMode, matchType === "Compétitif", {
+                winningScore: winningScore,
                 teamAScore: teamAScore,
                 teamBScore: teamBScore,
                 participants: results,
                 events: matchEvents
             })
+            mmrResults = res
         }
         matchRecorded = true
     }
@@ -447,9 +539,12 @@ Rectangle {
                         ComboBox {
                             id: scoreBox
                             Layout.fillWidth: true
-                            model: ["1 But", "2 Buts", "3 Buts", "4 Buts", "5 Buts", "6 Buts", "7 Buts", "8 Buts", "9 Buts", "10 Buts"]
-                            currentIndex: 9
-                            onCurrentIndexChanged: view.winningScore = currentIndex + 1
+                            readonly property bool ranked: view.matchType === "Compétitif"
+                            model: ranked ? ["3 Buts", "5 Buts"]
+                                        : ["1 But", "2 Buts", "3 Buts", "4 Buts", "5 Buts",
+                                            "6 Buts", "7 Buts", "8 Buts", "9 Buts", "10 Buts"]
+                            onModelChanged: currentIndex = ranked ? 1 : 9
+                            onCurrentTextChanged: view.winningScore = parseInt(currentText)
                         }
                     }
 
@@ -862,32 +957,52 @@ Rectangle {
                 visible: view.winnerName !== ""
 
                 ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 16
+    anchors.centerIn: parent
+    spacing: 12
 
-                    Label {
-                        text: "🏆 VICTOIRE ! 🏆"
-                        color: "#F59E0B"
-                        font.pixelSize: 32
-                        font.bold: true
-                        Layout.alignment: Qt.AlignHCenter
-                    }
+    Label {
+        text: "🏆 VICTOIRE ! 🏆"
+        color: "#F59E0B"
+        font.pixelSize: 28
+        font.bold: true
+        Layout.alignment: Qt.AlignHCenter
+    }
 
-                    Label {
-                        text: view.winnerName + " REMPORTE LE MATCH"
-                        color: "white"
-                        font.pixelSize: 22
-                        font.bold: true
-                        Layout.alignment: Qt.AlignHCenter
-                    }
+    Label {
+        text: view.winnerName + " REMPORTE LE MATCH"
+        color: "white"
+        font.pixelSize: 18
+        font.bold: true
+        Layout.alignment: Qt.AlignHCenter
+    }
 
-                    Button {
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.preferredWidth: 180
-                        text: "Recommencer"
-                        onClicked: view.matchStarted = false
-                    }
-                }
+    RowLayout {
+        Layout.alignment: Qt.AlignHCenter
+        spacing: 24
+
+        Column {
+            spacing: 8
+            Repeater {
+                model: view.mmrResults.filter(function (r) { return r.team === 1 })
+                delegate: mmrRowComponent
+            }
+        }
+        Column {
+            spacing: 8
+            Repeater {
+                model: view.mmrResults.filter(function (r) { return r.team === 2 })
+                delegate: mmrRowComponent
+            }
+        }
+    }
+
+    Button {
+        Layout.alignment: Qt.AlignHCenter
+        Layout.preferredWidth: 180
+        text: "Recommencer"
+        onClicked: view.matchStarted = false
+    }
+}
             }
         }
 

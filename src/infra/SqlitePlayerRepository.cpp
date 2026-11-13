@@ -11,6 +11,9 @@
 #include <map>
 #include <utility>
 
+
+#include "core/MmrService.hpp"   
+
 namespace babyfoot::infra {
 
 namespace {
@@ -232,6 +235,7 @@ void SqlitePlayerRepository::init() {
             team_a_score INTEGER NOT NULL,
             team_b_score INTEGER NOT NULL,
             played_at TEXT NOT NULL,
+            winning_score INTEGER NOT NULL DEFAULT 10,
             CHECK (format IN (1, 2)),
             CHECK (competitive IN (0, 1))
         )
@@ -341,6 +345,12 @@ void SqlitePlayerRepository::init() {
         ))) {
         qFatal("Impossible d'ajouter le MMR 2v2.");
     }
+
+    if (!hasColumn(QStringLiteral("matches"), QStringLiteral("winning_score")) &&
+        !execQuery(query, QStringLiteral(
+            "ALTER TABLE matches ADD COLUMN winning_score INTEGER NOT NULL DEFAULT 10"))) {
+        qFatal("Impossible d'ajouter winning_score.");
+    }
 }
 
 std::vector<babyfoot::core::Player>
@@ -448,21 +458,23 @@ babyfoot::core::Player SqlitePlayerRepository::add(const QString& pseudo) {
     };
 }
 
-bool SqlitePlayerRepository::recordMatch(
-    const babyfoot::core::MatchRecord& match) {
+std::optional<std::vector<babyfoot::core::MmrChange>>
+SqlitePlayerRepository::recordMatch(const babyfoot::core::MatchRecord& match) {
+
     QSqlDatabase db = QSqlDatabase::database();
     if (!db.transaction()) {
         qWarning() << "Impossible de démarrer la transaction du match :"
                    << db.lastError().text();
-        return false;
+        return std::nullopt;
     }
 
     QSqlQuery query{db};
     query.prepare(QStringLiteral(R"(
-        INSERT INTO matches
-            (format, competitive, team_a_score, team_b_score, played_at)
-        VALUES (:format, :competitive, :team_a_score, :team_b_score, :played_at)
+    INSERT INTO matches
+        (format, competitive, team_a_score, team_b_score, played_at, winning_score)
+        VALUES (:format, :competitive, :team_a_score, :team_b_score, :played_at, :winning_score)
     )"));
+    query.bindValue(QStringLiteral(":winning_score"), match.winningScore);
     query.bindValue(QStringLiteral(":format"), match.mode.format);
     query.bindValue(QStringLiteral(":competitive"), match.mode.competitive ? 1 : 0);
     query.bindValue(QStringLiteral(":team_a_score"), match.teamAScore);
@@ -472,7 +484,7 @@ bool SqlitePlayerRepository::recordMatch(
         qWarning() << "Enregistrement du match impossible :"
                    << query.lastError().text();
         db.rollback();
-        return false;
+        return std::nullopt;
     }
     const int matchId = query.lastInsertId().toInt();
 
@@ -481,7 +493,7 @@ bool SqlitePlayerRepository::recordMatch(
     if (!query.exec()) {
         qWarning() << "Lecture des players impossible :" << query.lastError().text();
         db.rollback();
-        return false;
+        return std::nullopt;
     }
     while (query.next()) {
         playerIds.emplace(query.value(1).toString(), query.value(0).toInt());
@@ -493,7 +505,7 @@ bool SqlitePlayerRepository::recordMatch(
             (participant.team != 1 && participant.team != 2)) {
             qWarning() << "Participant invalide :" << participant.pseudo;
             db.rollback();
-            return false;
+            return std::nullopt;
         }
 
         query.prepare(QStringLiteral(R"(
@@ -507,7 +519,7 @@ bool SqlitePlayerRepository::recordMatch(
         if (!query.exec()) {
             qWarning() << "Participant non enregistré :" << query.lastError().text();
             db.rollback();
-            return false;
+            return std::nullopt;
         }
     }
 
@@ -519,7 +531,7 @@ bool SqlitePlayerRepository::recordMatch(
              event.type != QStringLiteral("gamelle"))) {
             qWarning() << "Événement invalide pour :" << event.pseudo;
             db.rollback();
-            return false;
+            return std::nullopt;
         }
 
         query.prepare(QStringLiteral(R"(
@@ -535,7 +547,7 @@ bool SqlitePlayerRepository::recordMatch(
         if (!query.exec()) {
             qWarning() << "Événement non enregistré :" << query.lastError().text();
             db.rollback();
-            return false;
+            return std::nullopt;
         }
     }
 
@@ -546,63 +558,56 @@ bool SqlitePlayerRepository::recordMatch(
     if (!query.exec()) {
         qWarning() << "Lecture des MMR impossible :" << query.lastError().text();
         db.rollback();
-        return false;
+        return std::nullopt;
     }
     std::map<int, int> ratings;
     while (query.next()) {
         ratings.emplace(query.value(0).toInt(), query.value(1).toInt());
     }
 
-    double teamASum = 0.0;
-    double teamBSum = 0.0;
-    int teamACount = 0;
-    int teamBCount = 0;
+    babyfoot::core::MmrMatch mmrMatch;
+    mmrMatch.scoreA = match.teamAScore;
+    mmrMatch.scoreB = match.teamBScore;
+    mmrMatch.winningScore = match.winningScore;
     for (const auto& participant : match.participants) {
         const int playerId = playerIds.at(participant.pseudo);
-        const int rating = ratings.at(playerId);
-        if (participant.team == 1) {
-            teamASum += rating;
-            ++teamACount;
-        } else {
-            teamBSum += rating;
-            ++teamBCount;
+        mmrMatch.participants.push_back({
+            .playerId = playerId,
+            .team = participant.team,
+            .mmr = ratings.at(playerId)
+        });
+        if (participant.won) {
+            mmrMatch.winningTeam = participant.team;
         }
     }
-    if (teamACount == 0 || teamBCount == 0) {
-        qWarning() << "Un match doit inclure des joueurs dans les deux équipes.";
+
+    const babyfoot::core::MMRService mmrService;
+    const auto changes = mmrService.computeChanges(mmrMatch);
+    if (!changes) {
+        qWarning() << "Match incohérent, calcul du MMR impossible.";
         db.rollback();
-        return false;
+        return std::nullopt;
     }
 
-    const double teamARating = teamASum / teamACount;
-    const double teamBRating = teamBSum / teamBCount;
-    const double expectedTeamA = 1.0 / (1.0 + std::pow(10.0,
-        (teamBRating - teamARating) / 400.0));
-    for (const auto& participant : match.participants) {
-        const int playerId = playerIds.at(participant.pseudo);
-        const double expected = participant.team == 1
-            ? expectedTeamA : 1.0 - expectedTeamA;
-        const double result = participant.won ? 1.0 : 0.0;
-        const int updatedRating = static_cast<int>(std::lround(
-            ratings.at(playerId) + 32.0 * (result - expected)));
+    for (const auto& change : *changes) {
         query.prepare(QStringLiteral("UPDATE players SET %1 = :mmr WHERE id = :id")
-                          .arg(ratingColumn));
-        query.bindValue(QStringLiteral(":mmr"), updatedRating);
-        query.bindValue(QStringLiteral(":id"), playerId);
+                        .arg(ratingColumn));
+        query.bindValue(QStringLiteral(":mmr"), change.newMmr);
+        query.bindValue(QStringLiteral(":id"), change.playerId);
         if (!query.exec()) {
             qWarning() << "Mise à jour du MMR impossible :" << query.lastError().text();
             db.rollback();
-            return false;
+            return std::nullopt;
         }
     }
 
-    if (!db.commit()) {
-        qWarning() << "Validation du match impossible :" << db.lastError().text();
-        db.rollback();
-        return false;
+        if (!db.commit()) {
+            qWarning() << "Validation du match impossible :" << db.lastError().text();
+            db.rollback();
+            return std::nullopt;
+        }
+        return *changes;
     }
-    return true;
-}
 
 std::vector<int> SqlitePlayerRepository::getEventCounts(
     int playerId, babyfoot::core::GameMode mode, const QString& eventType) {

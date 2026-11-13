@@ -359,6 +359,24 @@ void AppController::refreshTopPlayers() {
         }
     }
 
+    std::vector<std::pair<QString, int>> topPlayers;
+    topPlayers.reserve(static_cast<std::size_t>(winsByPlayer.size()));
+    for (auto it = winsByPlayer.cbegin(); it != winsByPlayer.cend(); ++it) {
+        topPlayers.emplace_back(it.key(), it.value());
+    }
+    std::sort(topPlayers.begin(), topPlayers.end(), [](const auto& left, const auto& right) {
+        return left.second == right.second ? left.first < right.first
+                                           : left.second > right.second;
+    });
+
+    topPlayers_.clear();
+    for (const auto& [pseudo, wins] : topPlayers) {
+        topPlayers_.push_back(QVariantMap{
+            {QStringLiteral("pseudo"), pseudo},
+            {QStringLiteral("wins"), wins}
+        });
+    }
+    emit topPlayersChanged();
 }
 
 void AppController::refreshRegles() {

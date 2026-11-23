@@ -19,6 +19,7 @@ Rectangle {
     property bool matchRecorded: false
     property var matchStats: ({})
     property var matchEvents: []
+    property var undoStack: []
 
     // Gestion de la sélection du joueur et de la gamelle
     property string selectedPlayerName: ""
@@ -68,6 +69,7 @@ Rectangle {
         matchRecorded = false
         matchStats = ({})
         matchEvents = []
+        undoStack = []
         mmrResults = []
         matchStarted = true
     }
@@ -174,6 +176,33 @@ Rectangle {
         })
     }
 
+    function saveUndoState() {
+        undoStack = undoStack.concat([{
+            teamAScore: teamAScore,
+            teamBScore: teamBScore,
+            winnerName: winnerName,
+            matchStats: JSON.parse(JSON.stringify(matchStats)),
+            matchEvents: matchEvents.slice()
+        }])
+    }
+
+    function undoLastAction() {
+        if (undoStack.length === 0 || matchRecorded) return
+        var previous = undoStack[undoStack.length - 1]
+        undoStack = undoStack.slice(0, -1)
+        teamAScore = previous.teamAScore
+        teamBScore = previous.teamBScore
+        winnerName = previous.winnerName
+        matchStats = previous.matchStats
+        matchEvents = previous.matchEvents
+        selectedPlayerName = ""
+        selectedPlayerTeam = ""
+        selectedPositionCode = 0
+        pendingCage = ""
+        showGamelleDialog = false
+        mmrResults = []
+    }
+
     function recordMatchResult() {
         if (matchRecorded || winnerName === "") return
 
@@ -278,6 +307,7 @@ Rectangle {
     }
 
     function applyCSC(cage) {
+        saveUndoState()
         var beneficiaryTeam = (cage === "LEFT") ? "B" : "A"
 
         if (beneficiaryTeam === "A") {
@@ -288,7 +318,6 @@ Rectangle {
             if (teamBScore >= winningScore) winnerName = "ÉQUIPE BLEUE"
         }
         recordPlayerEvent(selectedPlayerName, "ownGoals")
-        recordMatchResult()
 
         // Appel backend C++ sécurisé
         if (typeof appController !== "undefined") {
@@ -306,6 +335,7 @@ Rectangle {
 
     function applyGoalOption(optionType) {
         showGamelleDialog = false
+        saveUndoState()
         var cage = pendingCage
         var beneficiaryTeam = (cage === "LEFT") ? "B" : "A"
         var victimTeam = (cage === "LEFT") ? "A" : "B"
@@ -319,6 +349,15 @@ Rectangle {
                 if (teamBScore >= winningScore) winnerName = "ÉQUIPE BLEUE"
             }
             recordPlayerEvent(selectedPlayerName, "goals")
+        } else if (optionType === "GAMELLE_PLUS_ONE") {
+            if (beneficiaryTeam === "A") {
+                teamAScore++
+                if (teamAScore >= winningScore) winnerName = "ÉQUIPE ROUGE"
+            } else {
+                teamBScore++
+                if (teamBScore >= winningScore) winnerName = "ÉQUIPE BLEUE"
+            }
+            recordPlayerEvent(selectedPlayerName, "gamelles")
         } else if (optionType === "GAMELLE_MINUS_ONE") {
             if (victimTeam === "A") {
                 teamAScore = Math.max(0, teamAScore - 1)
@@ -327,8 +366,6 @@ Rectangle {
             }
             recordPlayerEvent(selectedPlayerName, "gamelles")
         }
-        recordMatchResult()
-
         // Appel backend C++ sécurisé
         if (typeof appController !== "undefined") {
             if (typeof appController.recordGoalWithDetails === "function") {
@@ -881,7 +918,7 @@ Rectangle {
                 Rectangle {
                     anchors.centerIn: parent
                     implicitWidth: 340
-                    implicitHeight: 220
+                    implicitHeight: 280
                     radius: 20
                     color: "#1E293B"
                     border.color: "#38BDF8"
@@ -926,6 +963,25 @@ Rectangle {
                                 verticalAlignment: Text.AlignVCenter
                             }
                             onClicked: view.applyGoalOption("PLUS_ONE")
+                        }
+
+                        Button {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 44
+                            text: "💥 GAMELLE (+1 point à l'équipe)"
+                            background: Rectangle {
+                                color: parent.down ? "#047857" : "#10B981"
+                                radius: 10
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: "white"
+                                font.bold: true
+                                font.pixelSize: 13
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            onClicked: view.applyGoalOption("GAMELLE_PLUS_ONE")
                         }
 
                         Button {
@@ -977,6 +1033,7 @@ Rectangle {
     }
 
     RowLayout {
+        visible: view.matchRecorded
         Layout.alignment: Qt.AlignHCenter
         spacing: 24
 
@@ -997,6 +1054,23 @@ Rectangle {
     }
 
     Button {
+        visible: !view.matchRecorded && view.undoStack.length > 0
+        Layout.alignment: Qt.AlignHCenter
+        Layout.preferredWidth: 220
+        text: "Annuler la dernière action"
+        onClicked: view.undoLastAction()
+    }
+
+    Button {
+        visible: !view.matchRecorded
+        Layout.alignment: Qt.AlignHCenter
+        Layout.preferredWidth: 220
+        text: "Enregistrer le résultat"
+        onClicked: view.recordMatchResult()
+    }
+
+    Button {
+        visible: view.matchRecorded
         Layout.alignment: Qt.AlignHCenter
         Layout.preferredWidth: 180
         text: "Recommencer"
@@ -1010,6 +1084,13 @@ Rectangle {
         RowLayout {
             Layout.fillWidth: true
             Layout.preferredHeight: 32
+
+            Button {
+                visible: view.winnerName === ""
+                enabled: view.undoStack.length > 0
+                text: "Annuler la dernière action"
+                onClicked: view.undoLastAction()
+            }
 
             Button {
                 text: "Quitter le match"

@@ -33,12 +33,6 @@ int main(int argc, char** argv) {
     regleService.initialize();
     matchService.initialize();
 
-    // ajouter par défaut des joueurs
-    if (playerService.players().empty()) {
-        playerService.addPlayer(QStringLiteral("Bob"));
-        playerService.addPlayer(QStringLiteral("Alice"));
-    }
-
     // faire le pont entre le UI(qml) et le cpp derrière
     babyfoot::ui::AppController controller{
         playerService, regleService, matchService

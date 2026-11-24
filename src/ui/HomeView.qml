@@ -183,10 +183,33 @@ Rectangle {
                                 font.pixelSize: 13
                                 elide: Text.ElideRight
                             }
+
+                            RowLayout {
+                                Layout.preferredWidth: 112
+                                spacing: 6
+                                visible: appController.leaderboardRanked
+                                Layout.alignment: Qt.AlignRight
+
+                                Image {
+                                    Layout.preferredWidth: 22
+                                    Layout.preferredHeight: 22
+                                    source: modelData.rankIcon || ""
+                                    sourceSize.width: 44
+                                    sourceSize.height: 44
+                                    fillMode: Image.PreserveAspectFit
+                                }
+
+                                Label {
+                                    text: modelData.value + " MMR"
+                                    color: "#74DDEA"
+                                    font.pixelSize: 12
+                                    font.bold: true
+                                }
+                            }
+
                             Label {
-                                  text: appController.leaderboardRanked
-                                      ? modelData.value + " MMR"
-                                      : modelData.value + " buts"
+                                visible: !appController.leaderboardRanked
+                                text: modelData.value + " buts"
                                 color: "#74DDEA"
                                 font.pixelSize: 12
                                 font.bold: true

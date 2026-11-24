@@ -202,10 +202,34 @@ Rectangle {
                         font.bold: modelData.position <= 3
                         elide: Text.ElideRight
                     }
+                    RowLayout {
+                        Layout.preferredWidth: 112
+                        Layout.alignment: Qt.AlignRight
+                        spacing: 6
+                        visible: appController.leaderboardSort === "mmr"
+
+                        Image {
+                            Layout.preferredWidth: 48
+                            Layout.preferredHeight: 48
+                            source: modelData.rankIcon || ""
+                            sourceSize.width: 96
+                            sourceSize.height: 96
+                            fillMode: Image.PreserveAspectFit
+                        }
+
+                        Label {
+                            text: String(modelData.value)
+                            color: "#FFFFFF"
+                            font.pixelSize: 16
+                            font.bold: true
+                            horizontalAlignment: Text.AlignRight
+                        }
+                    }
+
                     Label {
-                        Layout.preferredWidth: 98
-                        text: (rankingCriterion.currentValue === "mmr" ? "🔥 " : "")
-                              + String(modelData.value)
+                        Layout.preferredWidth: 112
+                        visible: appController.leaderboardSort !== "mmr"
+                        text: String(modelData.value)
                         color: "#FFFFFF"
                         font.pixelSize: 16
                         font.bold: true

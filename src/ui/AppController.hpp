@@ -21,8 +21,7 @@ class AppController final : public QObject {
     Q_PROPERTY(QVariantList leaderboard READ leaderboard NOTIFY leaderboardChanged)
     Q_PROPERTY(QVariantList topPlayers READ topPlayers NOTIFY topPlayersChanged)
     Q_PROPERTY(bool leaderboardRanked READ leaderboardRanked NOTIFY leaderboardChanged)
-    Q_PROPERTY(int statsFormat READ statsFormat NOTIFY statsModeChanged)
-    Q_PROPERTY(bool statsCompetitive READ statsCompetitive NOTIFY statsModeChanged)
+    Q_PROPERTY(QString leaderboardSort READ leaderboardSort NOTIFY leaderboardChanged)
 
 public:
     explicit AppController(babyfoot::core::PlayerService& playerService,
@@ -36,18 +35,17 @@ public:
     QVariantList leaderboard() const { return leaderboard_; }
     QVariantList topPlayers() const { return topPlayers_; }
     bool leaderboardRanked() const { return leaderboardRanked_; }
+    QString leaderboardSort() const { return leaderboardSort_; }
 
     int counter() const { return counter_; }
     QVariantMap selectedPlayer() const { return selectedPlayer_; }
-    int statsFormat() const { return statsMode_.format; }
-    bool statsCompetitive() const { return statsMode_.competitive; }
 
     Q_INVOKABLE void addPlayer(const QString& pseudo);
     Q_INVOKABLE void selectPlayer(const QString& pseudo);
     Q_INVOKABLE void incrementCounter();
     Q_INVOKABLE void addRegle(const QString& nom, const QString& contenu); // addRegle
-    Q_INVOKABLE void setStatsMode(int format, bool competitive);
     Q_INVOKABLE void setLeaderboardMode(bool ranked);
+    Q_INVOKABLE void setLeaderboardSort(const QString& sort);
     Q_INVOKABLE QVariantList recordMatch(int format, bool competitive,
                                      const QVariantMap& matchData);
     Q_INVOKABLE QVariantList positionEventCounts(const QString& pseudo,
@@ -59,7 +57,6 @@ signals:
     void counterChanged();
     void selectedPlayerChanged();
     void reglesChanged();
-    void statsModeChanged();
     void matchHistoryChanged();
     void leaderboardChanged();
     void topPlayersChanged();
@@ -83,8 +80,8 @@ private:
     QVariantList leaderboard_;
     QVariantList topPlayers_;
     int counter_ = 0;
-    babyfoot::core::GameMode statsMode_;
     bool leaderboardRanked_ = false;
+    QString leaderboardSort_ = QStringLiteral("goals");
 };
 
 }

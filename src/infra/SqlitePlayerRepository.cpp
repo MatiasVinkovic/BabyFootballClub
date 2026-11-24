@@ -83,7 +83,6 @@ struct RatingMatchParticipant {
 };
 
 struct RatingMatch {
-    bool competitive = false;
     std::vector<RatingMatchParticipant> participants;
 };
 
@@ -95,7 +94,7 @@ bool rebuildRatingsFromHistory() {
         return false;
     }
 
-    std::map<int, std::pair<int, int>> ratings;
+    std::map<int, int> ratings;
     QSqlQuery query{db};
     if (!query.exec(QStringLiteral("SELECT id FROM players"))) {
         qWarning() << "Lecture des joueurs pour les MMR impossible :"
@@ -104,14 +103,15 @@ bool rebuildRatingsFromHistory() {
         return false;
     }
     while (query.next()) {
-        ratings.emplace(query.value(0).toInt(), std::pair{1000, 1000});
+        ratings.emplace(query.value(0).toInt(), 1000);
     }
 
     std::vector<RatingMatch> history;
     query.prepare(QStringLiteral(R"(
-        SELECT m.id, m.competitive, mp.player_id, mp.team, mp.won
+        SELECT m.id, mp.player_id, mp.team, mp.won
         FROM matches m
         JOIN match_players mp ON mp.match_id = m.id
+        WHERE m.competitive = 1
         ORDER BY m.id, mp.player_id
     )"));
     if (!query.exec()) {
@@ -124,13 +124,13 @@ bool rebuildRatingsFromHistory() {
     while (query.next()) {
         const int matchId = query.value(0).toInt();
         if (matchId != previousMatchId) {
-            history.push_back({.competitive = query.value(1).toBool()});
+            history.emplace_back();
             previousMatchId = matchId;
         }
         history.back().participants.push_back({
-            .playerId = query.value(2).toInt(),
-            .team = query.value(3).toInt(),
-            .won = query.value(4).toBool()
+            .playerId = query.value(1).toInt(),
+            .team = query.value(2).toInt(),
+            .won = query.value(3).toBool()
         });
     }
 
@@ -139,9 +139,8 @@ bool rebuildRatingsFromHistory() {
         double teamBSum = 0.0;
         int teamACount = 0;
         int teamBCount = 0;
-        const auto ratingFor = [&ratings, &match](int playerId) -> int& {
-            auto& playerRatings = ratings.at(playerId);
-            return match.competitive ? playerRatings.second : playerRatings.first;
+        const auto ratingFor = [&ratings](int playerId) -> int& {
+            return ratings.at(playerId);
         };
         for (const auto& participant : match.participants) {
             if (participant.team == 1) {
@@ -173,12 +172,11 @@ bool rebuildRatingsFromHistory() {
     }
 
     query.prepare(QStringLiteral(R"(
-        UPDATE players SET mmr_casual = :casual, mmr_ranked = :ranked
+        UPDATE players SET mmr_ranked = :ranked
         WHERE id = :id
     )"));
-    for (const auto& [playerId, playerRatings] : ratings) {
-        query.bindValue(QStringLiteral(":casual"), playerRatings.first);
-        query.bindValue(QStringLiteral(":ranked"), playerRatings.second);
+    for (const auto& [playerId, rating] : ratings) {
+        query.bindValue(QStringLiteral(":ranked"), rating);
         query.bindValue(QStringLiteral(":id"), playerId);
         if (!query.exec()) {
             qWarning() << "Écriture des MMR migrés impossible :"
@@ -221,9 +219,6 @@ void SqlitePlayerRepository::init() {
         CREATE TABLE IF NOT EXISTS players (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             pseudo TEXT NOT NULL UNIQUE,
-            mmr_1v1 INTEGER NOT NULL DEFAULT 1000,
-            mmr_2v2 INTEGER NOT NULL DEFAULT 1000,
-            mmr_casual INTEGER NOT NULL DEFAULT 1000,
             mmr_ranked INTEGER NOT NULL DEFAULT 1000
         )
     )") ||
@@ -289,14 +284,7 @@ void SqlitePlayerRepository::init() {
         qFatal("Impossible de créer le schéma historique SQLite.");
     }
     const bool rebuildRatings =
-        !hasColumn(QStringLiteral("players"), QStringLiteral("mmr_casual")) ||
         !hasColumn(QStringLiteral("players"), QStringLiteral("mmr_ranked"));
-    if (!hasColumn(QStringLiteral("players"), QStringLiteral("mmr_casual")) &&
-        !execQuery(query, QStringLiteral(
-            "ALTER TABLE players ADD COLUMN mmr_casual INTEGER NOT NULL DEFAULT 1000"
-        ))) {
-        qFatal("Impossible d'ajouter le MMR casual.");
-    }
     if (!hasColumn(QStringLiteral("players"), QStringLiteral("mmr_ranked")) &&
         !execQuery(query, QStringLiteral(
             "ALTER TABLE players ADD COLUMN mmr_ranked INTEGER NOT NULL DEFAULT 1000"
@@ -333,17 +321,17 @@ void SqlitePlayerRepository::init() {
         qFatal("Impossible de recréer les index des événements.");
     }
 
-    if (!hasColumn(QStringLiteral("players"), QStringLiteral("mmr_1v1")) &&
+    if (hasColumn(QStringLiteral("players"), QStringLiteral("mmr_1v1")) &&
         !execQuery(query, QStringLiteral(
-            "ALTER TABLE players ADD COLUMN mmr_1v1 INTEGER NOT NULL DEFAULT 1000"
+            "ALTER TABLE players DROP COLUMN mmr_1v1"
         ))) {
-        qFatal("Impossible d'ajouter le MMR 1v1.");
+        qFatal("Impossible de supprimer le MMR 1v1 obsolète.");
     }
-    if (!hasColumn(QStringLiteral("players"), QStringLiteral("mmr_2v2")) &&
+    if (hasColumn(QStringLiteral("players"), QStringLiteral("mmr_2v2")) &&
         !execQuery(query, QStringLiteral(
-            "ALTER TABLE players ADD COLUMN mmr_2v2 INTEGER NOT NULL DEFAULT 1000"
+            "ALTER TABLE players DROP COLUMN mmr_2v2"
         ))) {
-        qFatal("Impossible d'ajouter le MMR 2v2.");
+        qFatal("Impossible de supprimer le MMR 2v2 obsolète.");
     }
 
     if (!hasColumn(QStringLiteral("matches"), QStringLiteral("winning_score")) &&
@@ -362,7 +350,6 @@ SqlitePlayerRepository::getAll(babyfoot::core::GameMode mode) {
         SELECT
             p.id,
             p.pseudo,
-            p.mmr_casual,
             p.mmr_ranked,
             COALESCE((
                 SELECT COUNT(*)
@@ -370,8 +357,6 @@ SqlitePlayerRepository::getAll(babyfoot::core::GameMode mode) {
                 JOIN matches m ON m.id = e.match_id
                 WHERE e.player_id = p.id
                   AND e.event_type = 'goal'
-                  AND m.format = :format
-                  AND m.competitive = :competitive
             ), 0) AS goals,
             COALESCE((
                 SELECT COUNT(*)
@@ -379,8 +364,6 @@ SqlitePlayerRepository::getAll(babyfoot::core::GameMode mode) {
                 JOIN matches m ON m.id = e.match_id
                 WHERE e.player_id = p.id
                   AND e.event_type = 'own_goal'
-                  AND m.format = :format
-                  AND m.competitive = :competitive
             ), 0) AS own_goals,
             COALESCE((
                 SELECT COUNT(*)
@@ -388,8 +371,6 @@ SqlitePlayerRepository::getAll(babyfoot::core::GameMode mode) {
                 JOIN matches m ON m.id = e.match_id
                 WHERE e.player_id = p.id
                   AND e.event_type = 'gamelle'
-                  AND m.format = :format
-                  AND m.competitive = :competitive
             ), 0) AS gamelles,
             COALESCE((
                 SELECT COUNT(*)
@@ -397,8 +378,6 @@ SqlitePlayerRepository::getAll(babyfoot::core::GameMode mode) {
                 JOIN matches m ON m.id = mp.match_id
                 WHERE mp.player_id = p.id
                   AND mp.won = 1
-                  AND m.format = :format
-                  AND m.competitive = :competitive
             ), 0) AS wins,
             COALESCE((
                 SELECT COUNT(*)
@@ -406,15 +385,10 @@ SqlitePlayerRepository::getAll(babyfoot::core::GameMode mode) {
                 JOIN matches m ON m.id = mp.match_id
                 WHERE mp.player_id = p.id
                   AND mp.won = 0
-                  AND m.format = :format
-                  AND m.competitive = :competitive
             ), 0) AS losses
         FROM players p
         ORDER BY p.pseudo
     )"));
-    query.bindValue(QStringLiteral(":format"), mode.format);
-    query.bindValue(QStringLiteral(":competitive"), mode.competitive ? 1 : 0);
-
     if (!query.exec()) {
         qWarning() << "Lecture des statistiques impossible :"
                    << query.lastError().text();
@@ -425,15 +399,14 @@ SqlitePlayerRepository::getAll(babyfoot::core::GameMode mode) {
         babyfoot::core::Player player;
         player.id = query.value(0).toInt();
         player.pseudo = query.value(1).toString();
-        player.mmr_casual = query.value(2).toInt();
-        player.mmr_ranked = query.value(3).toInt();
+        player.mmr_ranked = query.value(2).toInt();
         player.stats.competitive = mode.competitive;
-        player.stats.mmr = mode.competitive ? player.mmr_ranked : player.mmr_casual;
-        player.stats.buts_marques = query.value(4).toInt();
-        player.stats.csc = query.value(5).toInt();
-        player.stats.gamelles = query.value(6).toInt();
-        player.stats.victoires = query.value(7).toInt();
-        player.stats.defaites = query.value(8).toInt();
+        player.stats.mmr = player.mmr_ranked;
+        player.stats.buts_marques = query.value(3).toInt();
+        player.stats.csc = query.value(4).toInt();
+        player.stats.gamelles = query.value(5).toInt();
+        player.stats.victoires = query.value(6).toInt();
+        player.stats.defaites = query.value(7).toInt();
         players.push_back(std::move(player));
     }
 
@@ -443,7 +416,7 @@ SqlitePlayerRepository::getAll(babyfoot::core::GameMode mode) {
 babyfoot::core::Player SqlitePlayerRepository::add(const QString& pseudo) {
     QSqlQuery query;
     query.prepare(QStringLiteral(
-        "INSERT INTO players (pseudo) VALUES (:pseudo)"
+        "INSERT INTO players (pseudo, mmr_ranked) VALUES (:pseudo, 1000)"
     ));
     query.bindValue(QStringLiteral(":pseudo"), pseudo);
 
@@ -551,9 +524,16 @@ SqlitePlayerRepository::recordMatch(const babyfoot::core::MatchRecord& match) {
         }
     }
 
-    const QString ratingColumn = match.mode.competitive
-        ? QStringLiteral("mmr_ranked")
-        : QStringLiteral("mmr_casual");
+    if (!match.mode.competitive) {
+        if (!db.commit()) {
+            qWarning() << "Validation du match impossible :" << db.lastError().text();
+            db.rollback();
+            return std::nullopt;
+        }
+        return std::vector<babyfoot::core::MmrChange>{};
+    }
+
+    const QString ratingColumn = QStringLiteral("mmr_ranked");
     query.prepare(QStringLiteral("SELECT id, %1 FROM players").arg(ratingColumn));
     if (!query.exec()) {
         qWarning() << "Lecture des MMR impossible :" << query.lastError().text();
@@ -619,14 +599,10 @@ std::vector<int> SqlitePlayerRepository::getEventCounts(
         JOIN matches m ON m.id = e.match_id
         WHERE e.player_id = :player_id
           AND e.event_type = :event_type
-          AND m.format = :format
-          AND m.competitive = :competitive
         GROUP BY e.position_code
     )"));
     query.bindValue(QStringLiteral(":player_id"), playerId);
     query.bindValue(QStringLiteral(":event_type"), eventType);
-    query.bindValue(QStringLiteral(":format"), mode.format);
-    query.bindValue(QStringLiteral(":competitive"), mode.competitive ? 1 : 0);
     if (!query.exec()) {
         qWarning() << "Lecture des détails de statistiques impossible :"
                    << query.lastError().text();

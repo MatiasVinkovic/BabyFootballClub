@@ -68,25 +68,6 @@ Dialog {
                     elide: Text.ElideRight
                 }
 
-                RowLayout {
-                    spacing: 6
-
-                    Image {
-                        Layout.preferredWidth: 24
-                        Layout.preferredHeight: 24
-                        source: appController.selectedPlayer.rankIcon || ""
-                        sourceSize.width: 48
-                        sourceSize.height: 48
-                        fillMode: Image.PreserveAspectFit
-                    }
-
-                    Label {
-                        text: (typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.rank || "Unranked") : "Unranked"
-                        color: "#00E5FF"
-                        font.pixelSize: 14
-                        font.bold: true
-                    }
-                }
             }
 
             RowLayout {
@@ -94,22 +75,9 @@ Dialog {
                 spacing: 10
 
                 Label {
-                    text: "Statistiques :"
+                    text: "Tous modes"
                     color: "#7E8FA6"
                     font.pixelSize: 12
-                }
-
-                ComboBox {
-                    id: statsModeBox
-                    Layout.fillWidth: true
-                    model: ["1v1 amical", "2v2 amical", "1v1 compétitif", "2v2 compétitif"]
-                    currentIndex: (appController.statsCompetitive ? 2 : 0) +
-                                  (appController.statsFormat === 2 ? 1 : 0)
-                    onActivated: {
-                        if (typeof appController !== "undefined") {
-                            appController.setStatsMode((currentIndex % 2) + 1, currentIndex >= 2)
-                        }
-                    }
                 }
 
                 Button {
@@ -285,7 +253,7 @@ Dialog {
                     }
 
                     Label {
-                        text: "CLASSEMENT"
+                        text: "CLASSEMENT RANKED"
                         color: "#7E8FA6"
                         font.pixelSize: 10
                         font.bold: true

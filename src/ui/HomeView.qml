@@ -184,7 +184,9 @@ Rectangle {
                                 elide: Text.ElideRight
                             }
                             Label {
-                                text: modelData.mmr + " MMR"
+                                  text: appController.leaderboardRanked
+                                      ? modelData.value + " MMR"
+                                      : modelData.value + " buts"
                                 color: "#74DDEA"
                                 font.pixelSize: 12
                                 font.bold: true

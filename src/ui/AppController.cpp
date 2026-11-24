@@ -120,7 +120,7 @@ void AppController::addRegle(const QString& nom, const QString& contenu) {
 }
 
 void AppController::selectPlayer(const QString& pseudo) {
-    for (const auto& player : playerService_.players(statsMode_)) {
+    for (const auto& player : playerService_.players({.format = 1, .competitive = true})) {
         // player.pseudo est déjà un QString !
         if (player.pseudo != pseudo) {
             continue;
@@ -128,7 +128,7 @@ void AppController::selectPlayer(const QString& pseudo) {
 
         selectedPlayer_ = {
             {QStringLiteral("pseudo"), player.pseudo},
-            {QStringLiteral("mmr"), player.stats.mmr},
+            {QStringLiteral("mmr"), player.mmr_ranked},
             {QStringLiteral("rank"), babyfoot::core::toString(player.rank())},
             {QStringLiteral("rankIcon"), babyfoot::core::rankIconUrl(player.rank().rank)},
             {QStringLiteral("goals"), player.stats.buts_marques},
@@ -138,8 +138,6 @@ void AppController::selectPlayer(const QString& pseudo) {
             {QStringLiteral("wins"), player.stats.victoires},
             {QStringLiteral("losses"), player.stats.defaites},
             {QStringLiteral("matchesPlayed"), player.stats.matchsJoues()},
-            {QStringLiteral("format"), statsMode_.format},
-            {QStringLiteral("competitive"), statsMode_.competitive}
         };
         emit selectedPlayerChanged();
         return;
@@ -151,30 +149,30 @@ void AppController::incrementCounter() {
     emit counterChanged();
 }
 
-void AppController::setStatsMode(int format, bool competitive) {
-    if (format != 1 && format != 2) {
-        qWarning() << "Format de statistiques invalide :" << format;
-        return;
-    }
-
-    if (statsMode_.format == format &&
-        statsMode_.competitive == competitive) {
-        return;
-    }
-
-    statsMode_ = {.format = format, .competitive = competitive};
-    const QString pseudo = selectedPlayer_.value(QStringLiteral("pseudo")).toString();
-    if (!pseudo.isEmpty()) {
-        selectPlayer(pseudo);
-    }
-    emit statsModeChanged();
-}
-
 void AppController::setLeaderboardMode(bool ranked) {
     if (leaderboardRanked_ == ranked) {
         return;
     }
     leaderboardRanked_ = ranked;
+    if (!ranked && leaderboardSort_ == QStringLiteral("mmr")) {
+        leaderboardSort_ = QStringLiteral("goals");
+    }
+    refreshLeaderboard();
+}
+
+void AppController::setLeaderboardSort(const QString& sort) {
+    static const QStringList sortOptions{
+        QStringLiteral("mmr"), QStringLiteral("goals"),
+        QStringLiteral("usefulGoals"), QStringLiteral("wins"),
+        QStringLiteral("matches"), QStringLiteral("ownGoals"),
+        QStringLiteral("losses"), QStringLiteral("gamelles")
+    };
+    if (!sortOptions.contains(sort) ||
+        (!leaderboardRanked_ && sort == QStringLiteral("mmr")) ||
+        leaderboardSort_ == sort) {
+        return;
+    }
+    leaderboardSort_ = sort;
     refreshLeaderboard();
 }
 
@@ -288,7 +286,7 @@ QVariantList AppController::positionEventCounts(const QString& pseudo,
         return {};
     }
 
-    const auto players = playerService_.players(statsMode_);
+    const auto players = playerService_.players({.format = 1, .competitive = true});
     for (const auto& player : players) {
         if (player.pseudo != pseudo) {
             continue;
@@ -296,7 +294,7 @@ QVariantList AppController::positionEventCounts(const QString& pseudo,
 
         QVariantList result;
         for (const int count : playerService_.eventCounts(
-                 player.id, statsMode_, eventType)) {
+                 player.id, {.format = 1, .competitive = true}, eventType)) {
             result.append(count);
         }
         return result;
@@ -307,7 +305,7 @@ QVariantList AppController::positionEventCounts(const QString& pseudo,
 
 void AppController::refreshPlayers() {
     players_.clear();
-    for (const auto& player : playerService_.players(statsMode_)) {
+    for (const auto& player : playerService_.players({.format = 1, .competitive = true})) {
         // player.pseudo est déjà un QString, pas besoin de covnersion donc
         players_.append(player.pseudo);
     }
@@ -317,21 +315,30 @@ void AppController::refreshPlayers() {
 }
 
 void AppController::refreshLeaderboard() {
-    auto players = playerService_.players({.format = 1, .competitive = leaderboardRanked_});
-    std::sort(players.begin(), players.end(), [this](const auto& left, const auto& right) {
-        const int leftMmr = leaderboardRanked_ ? left.mmr_ranked : left.mmr_casual;
-        const int rightMmr = leaderboardRanked_ ? right.mmr_ranked : right.mmr_casual;
-        return leftMmr == rightMmr ? left.pseudo < right.pseudo : leftMmr > rightMmr;
+    auto players = playerService_.players({.format = 1, .competitive = true});
+    const auto sortValue = [this](const auto& player) {
+        if (leaderboardSort_ == QStringLiteral("goals")) return player.stats.buts_marques;
+        if (leaderboardSort_ == QStringLiteral("usefulGoals")) return player.stats.butsUtiles();
+        if (leaderboardSort_ == QStringLiteral("wins")) return player.stats.victoires;
+        if (leaderboardSort_ == QStringLiteral("matches")) return player.stats.matchsJoues();
+        if (leaderboardSort_ == QStringLiteral("ownGoals")) return player.stats.csc;
+        if (leaderboardSort_ == QStringLiteral("losses")) return player.stats.defaites;
+        if (leaderboardSort_ == QStringLiteral("gamelles")) return player.stats.gamelles;
+        return player.mmr_ranked;
+    };
+    std::sort(players.begin(), players.end(), [&sortValue](const auto& left, const auto& right) {
+        const int leftValue = sortValue(left);
+        const int rightValue = sortValue(right);
+        return leftValue == rightValue ? left.pseudo < right.pseudo : leftValue > rightValue;
     });
 
     leaderboard_.clear();
     int position = 1;
     for (const auto& player : players) {
-        const int mmr = leaderboardRanked_ ? player.mmr_ranked : player.mmr_casual;
         leaderboard_.push_back(QVariantMap{
             {QStringLiteral("position"), position++},
             {QStringLiteral("pseudo"), player.pseudo},
-            {QStringLiteral("mmr"), mmr}
+            {QStringLiteral("value"), sortValue(player)}
         });
     }
     emit leaderboardChanged();
@@ -351,12 +358,8 @@ void AppController::refreshAfterMatch() {
 
 void AppController::refreshTopPlayers() {
     QMap<QString, int> winsByPlayer;
-    for (const int format : {1, 2}) {
-        for (const bool competitive : {false, true}) {
-            for (const auto& player : playerService_.players({format, competitive})) {
-                winsByPlayer[player.pseudo] += player.stats.victoires;
-            }
-        }
+    for (const auto& player : playerService_.players({.format = 1, .competitive = true})) {
+        winsByPlayer[player.pseudo] = player.stats.victoires;
     }
 
     std::vector<std::pair<QString, int>> topPlayers;

@@ -49,7 +49,6 @@ struct MatchRecord {
 struct Player {
     int id = 0;
     QString pseudo;
-    int mmr_casual = 1000;
     int mmr_ranked = 1000;
     PlayerStats stats;
 

@@ -76,6 +76,47 @@ Rectangle {
                     radius: 6
                 }
             }
+
+            ComboBox {
+                id: rankingCriterion
+                Layout.preferredWidth: 150
+                Layout.preferredHeight: 40
+                property var sortKeys: appController.leaderboardRanked
+                    ? ["mmr", "goals", "usefulGoals", "wins", "matches", "ownGoals", "losses", "gamelles"]
+                    : ["goals", "usefulGoals", "wins", "matches", "ownGoals", "losses", "gamelles"]
+                model: appController.leaderboardRanked
+                    ? ["MMR", "Buts marqués", "Buts utiles", "Victoires", "Matchs joués", "CSC", "Défaites", "Gamelles"]
+                    : ["Buts marqués", "Buts utiles", "Victoires", "Matchs joués", "CSC", "Défaites", "Gamelles"]
+                currentIndex: sortKeys.indexOf(appController.leaderboardSort)
+                onActivated: appController.setLeaderboardSort(sortKeys[currentIndex])
+
+                contentItem: Text {
+                    leftPadding: 10
+                    rightPadding: 24
+                    text: rankingCriterion.displayText
+                    color: "#0B2542"
+                    font.pixelSize: 14
+                    font.bold: true
+                    verticalAlignment: Text.AlignVCenter
+                    elide: Text.ElideRight
+                }
+
+                indicator: Text {
+                    x: rankingCriterion.width - width - 10
+                    y: (rankingCriterion.height - height) / 2
+                    text: "⌄"
+                    color: "#0B2542"
+                    font.pixelSize: 18
+                    font.bold: true
+                }
+
+                background: Rectangle {
+                    color: "#7DD3FC"
+                    border.color: "#BAE6FD"
+                    border.width: 1
+                    radius: 6
+                }
+            }
         }
 
         Rectangle {
@@ -106,7 +147,7 @@ Rectangle {
             }
             Label {
                 Layout.preferredWidth: 110
-                text: "MMR"
+                text: rankingCriterion.displayText.toUpperCase()
                 color: "#8490A4"
                 font.pixelSize: 10
                 font.bold: true
@@ -163,7 +204,8 @@ Rectangle {
                     }
                     Label {
                         Layout.preferredWidth: 98
-                        text: "🔥 " + String(modelData.mmr)
+                        text: (rankingCriterion.currentValue === "mmr" ? "🔥 " : "")
+                              + String(modelData.value)
                         color: "#FFFFFF"
                         font.pixelSize: 16
                         font.bold: true

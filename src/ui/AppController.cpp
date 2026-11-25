@@ -338,7 +338,8 @@ void AppController::refreshLeaderboard() {
         leaderboard_.push_back(QVariantMap{
             {QStringLiteral("position"), position++},
             {QStringLiteral("pseudo"), player.pseudo},
-            {QStringLiteral("value"), sortValue(player)}
+            {QStringLiteral("value"), sortValue(player)},
+            {QStringLiteral("rankIcon"), babyfoot::core::rankIconUrl(player.rank().rank)}
         });
     }
     emit leaderboardChanged();

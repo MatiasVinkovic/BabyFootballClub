@@ -18,7 +18,7 @@ Rectangle {
 
     property bool entered: false
 
-    Component.onCompleted: introTimer.start()
+    function startIntro() { introTimer.start() }
 
     Timer {
         id: introTimer

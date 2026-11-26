@@ -2,7 +2,6 @@ import QtQuick.Controls
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 
-
 ApplicationWindow {
     id: root
 
@@ -60,8 +59,9 @@ ApplicationWindow {
             Layout.fillHeight: true
             currentIndex: root.currentPage
 
-            // Page 0 : Accueil (Match + Inscription)
+            // Page 0 : Accueil
             HomeView {
+                id: homeView
                 onPlayerSelected: function(name) {
                     if (typeof appController !== "undefined") {
                         appController.selectPlayer(name)
@@ -73,6 +73,7 @@ ApplicationWindow {
                 }
             }
 
+            // Page 1 : Règlement
             RegleView {}
 
             // Page 2 : Matchs
@@ -88,7 +89,7 @@ ApplicationWindow {
                 }
             }
 
-            // Page 3 : Classement
+            // Page 4 : Classement
             RankingView {
                 onPlayerClicked: function(name) {
                     if (typeof appController !== "undefined") {
@@ -98,7 +99,7 @@ ApplicationWindow {
                 }
             }
 
-            // Page 4 : Historique
+            // Page 5 : Historique
             MatchHistoryView {}
         }
     }
@@ -111,5 +112,12 @@ ApplicationWindow {
     MatchDetailsDialog {
         id: matchDetailsDialog
         parent: Overlay.overlay
+    }
+
+    // Splash : en dernier pour être au-dessus de tout
+    SplashOverlay {
+        id: splash
+        anchors.fill: parent
+        onFinished: homeView.startIntro()
     }
 }

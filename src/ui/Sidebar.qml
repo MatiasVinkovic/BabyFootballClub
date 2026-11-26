@@ -137,5 +137,64 @@ Rectangle {
         }
 
         Item { Layout.fillHeight: true }
+
+        Button {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 42
+            Accessible.name: "Éteindre le Raspberry Pi"
+            ToolTip.visible: hovered
+            ToolTip.text: "Éteindre le Raspberry Pi"
+            onClicked: poweroffDialog.open()
+
+            contentItem: Label {
+                text: control.collapsed ? "OFF" : "Éteindre"
+                color: "#FF8A9B"
+                font.pixelSize: 12
+                font.bold: true
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+            background: Rectangle {
+                radius: 9
+                color: parent.hovered ? "#3A202D" : "transparent"
+                border.color: "#5A2D3C"
+                border.width: 1
+            }
+        }
+    }
+
+    Dialog {
+        id: poweroffDialog
+        anchors.centerIn: Overlay.overlay
+        width: 320
+        modal: true
+        title: "Éteindre le Raspberry Pi ?"
+
+        contentItem: Label {
+            text: "L'application et les autres services vont être arrêtés."
+            color: "#D7E0EC"
+            wrapMode: Text.WordWrap
+        }
+
+        footer: RowLayout {
+            spacing: 10
+
+            Item { Layout.fillWidth: true }
+
+            Button {
+                text: "Annuler"
+                onClicked: poweroffDialog.reject()
+            }
+
+            Button {
+                text: "Éteindre"
+                onClicked: poweroffDialog.accept()
+            }
+        }
+
+        onAccepted: {
+            if (typeof appController !== "undefined")
+                appController.poweroff()
+        }
     }
 }

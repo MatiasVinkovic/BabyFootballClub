@@ -28,7 +28,7 @@ Rectangle {
                 spacing: 4
 
                 Label {
-                    text: "⚽  Classement"
+                    text: "Classement"
                     color: "#FFFFFF"
                     font.pixelSize: 24
                     font.bold: true
@@ -186,9 +186,7 @@ Rectangle {
 
                     Label {
                         Layout.preferredWidth: 62
-                        text: modelData.position === 1 ? "🥇 1"
-                            : modelData.position === 2 ? "🥈 2"
-                            : modelData.position === 3 ? "🥉 3"
+                        text: modelData.position <= 3 ? "#" + modelData.position
                             : String(modelData.position).padStart(2, "0")
                         color: "#FFFFFF"
                         font.pixelSize: 14

@@ -46,7 +46,7 @@ Rectangle {
                 spacing: 8
 
                 Label {
-                    text: "⚽  BABYFOOT CLUB"
+                    text: "BABYFOOT CLUB"
                     color: "#66D9EF"
                     font.pixelSize: 11
                     font.bold: true
@@ -70,7 +70,7 @@ Rectangle {
             }
 
             Button {
-                text: "⚽  Créer un match"
+                text: "Créer un match"
                 Layout.preferredWidth: 178
                 Layout.preferredHeight: 48
                 scale: hovered ? 1.04 : (down ? 0.98 : 1)
@@ -137,7 +137,7 @@ Rectangle {
                         Layout.fillWidth: true
                         Label {
                             Layout.fillWidth: true
-                            text: "🏆 Classement"
+                            text: "Classement"
                             color: "#FFFFFF"
                             font.pixelSize: 16
                             font.bold: true
@@ -173,8 +173,9 @@ Rectangle {
                             Layout.preferredHeight: 24
                             Label {
                                 Layout.preferredWidth: 30
-                                text: modelData.position === 1 ? "🥇" : modelData.position === 2 ? "🥈" : "🥉"
+                                text: "#" + modelData.position
                                 font.pixelSize: 14
+                                color : "#F7C96B"
                             }
                             Label {
                                 Layout.fillWidth: true
@@ -276,7 +277,7 @@ Rectangle {
                         Layout.fillWidth: true
                         Label {
                             Layout.fillWidth: true
-                            text: "🔥 Joueurs du moment"
+                            text: "Joueurs du moment"
                             color: "#FFFFFF"
                             font.pixelSize: 16
                             font.bold: true
@@ -390,7 +391,7 @@ Rectangle {
                         Layout.fillWidth: true
                         Label {
                             Layout.fillWidth: true
-                            text: "📖 Règlement"
+                            text: "Règlement"
                             color: "#FFFFFF"
                             font.pixelSize: 16
                             font.bold: true
@@ -493,7 +494,7 @@ Rectangle {
                     spacing: 8
 
                     Label {
-                        text: "⚽ Prochaine partie"
+                        text: "Prochaine partie"
                         color: "#FFFFFF"
                         font.pixelSize: 16
                         font.bold: true

@@ -100,7 +100,7 @@ Rectangle {
             spacing: 2
 
             Text {
-                text: r.pseudo + (r.won ? "  🏆" : "")
+                text: r.pseudo + (r.won ? "  (V)" : "")
                 color: "white"
                 font.bold: true
                 font.pixelSize: 14
@@ -640,7 +640,7 @@ Rectangle {
 
                     Label {
                         Layout.fillWidth: true
-                        text: "🔴 " + view.teamAPlayers.join(" & ")
+                        text: "Équipe A : " + view.teamAPlayers.join(" & ")
                         color: "white"
                         font.pixelSize: 13
                         font.bold: true
@@ -702,7 +702,7 @@ Rectangle {
 
                     Label {
                         Layout.fillWidth: true
-                        text: view.teamBPlayers.join(" & ") + " 🔵"
+                        text: "Équipe B : " + view.teamBPlayers.join(" & ")
                         color: "white"
                         font.pixelSize: 13
                         font.bold: true
@@ -949,7 +949,7 @@ Rectangle {
                         Button {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 44
-                            text: "⚽ BUT CLASSIQUE (+1 point)"
+                            text: "BUT CLASSIQUE (+1 point)"
                             background: Rectangle {
                                 color: parent.down ? "#0284C7" : "#0EA5E9"
                                 radius: 10
@@ -968,7 +968,7 @@ Rectangle {
                         Button {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 44
-                            text: "💥 GAMELLE (+1 point à l'équipe)"
+                            text: "GAMELLE (+1 point à l'équipe)"
                             background: Rectangle {
                                 color: parent.down ? "#047857" : "#10B981"
                                 radius: 10
@@ -987,7 +987,7 @@ Rectangle {
                         Button {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 44
-                            text: "💥 GAMELLE (-1 point à l'adversaire)"
+                            text: "GAMELLE (-1 point à l'adversaire)"
                             background: Rectangle {
                                 color: parent.down ? "#B91C1C" : "#EF4444"
                                 radius: 10
@@ -1017,7 +1017,7 @@ Rectangle {
     spacing: 12
 
     Label {
-        text: "🏆 VICTOIRE ! 🏆"
+        text: "VICTOIRE !"
         color: "#F59E0B"
         font.pixelSize: 28
         font.bold: true

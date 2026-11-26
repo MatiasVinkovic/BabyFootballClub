@@ -1,8 +1,8 @@
-⚽ BabyFootballClub ⚽
+BabyFootballClub
 
-Un pour tous tous pour un baby ! 🔴🔵
+Un pour tous tous pour un baby !
 
-🛠️ Dépendances Linux
+Dépendances Linux
 
 Si vous êtes sur Ubuntu / Debian / Linux Mint, installez les paquets nécessaires avec :
 
@@ -10,9 +10,9 @@ sudo apt update
 sudo apt install -y build-essential cmake qt6-base-dev qt6-declarative-dev
 
 
-🔨 Comment compiler le projet en fonction de la plateforme :
+Comment compiler le projet en fonction de la plateforme :
 
-💡 Astuce Nettoyage : Si vous rencontrez une erreur de configuration CMake, nettoyez le dossier de build :
+Astuce nettoyage : Si vous rencontrez une erreur de configuration CMake, nettoyez le dossier de build :
 
 rm -rf build
 
@@ -38,7 +38,7 @@ Sur Windows (PowerShell) :
 .\build\babyfoot-app.exe
 
 
-⚙️ Comment la pipeline est orchestrée ⚽
+Comment la pipeline est orchestrée
 
 Filtrage par branche (branches) :
 

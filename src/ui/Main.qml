@@ -8,8 +8,8 @@ ApplicationWindow {
 
     property int currentPage: 0
 
-    width: 1100
-    height: 650
+    width: 1024
+    height: 600
     minimumWidth: 980
     minimumHeight: 560
     visible: true

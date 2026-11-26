@@ -33,10 +33,10 @@ Dialog {
 
     function eventIcon(type) {
         if (type === "But")
-            return "⚽"
+            return "B"
         if (type === "CSC")
-            return "↩"
-        return "🔥"
+            return "C"
+        return "G"
     }
 
     function eventColor(type) {

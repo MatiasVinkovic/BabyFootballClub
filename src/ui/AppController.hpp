@@ -51,6 +51,7 @@ public:
     Q_INVOKABLE QVariantList positionEventCounts(const QString& pseudo,
                                                   const QString& eventType);
     Q_INVOKABLE QVariantMap matchDetails(int matchId);
+    Q_INVOKABLE void poweroff();
 
 signals:
     void playersChanged();

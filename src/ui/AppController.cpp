@@ -1,6 +1,7 @@
 #include "ui/AppController.hpp"
 
 #include <QDebug>
+#include <QProcess>
 #include <map>
 #include <algorithm>
 #include <utility>
@@ -75,6 +76,13 @@ QVariantMap AppController::matchDetails(int matchId) {
     }
     details.insert(QStringLiteral("events"), events);
     return details;
+}
+
+void AppController::poweroff() {
+    const QString scriptPath = QStringLiteral("/home/yann/Desktop/poweroff.sh");
+    if (!QProcess::startDetached(QStringLiteral("/bin/sh"), {scriptPath})) {
+        qWarning() << "Impossible de lancer le script d'arrêt :" << scriptPath;
+    }
 }
 
 void AppController::refreshMatchHistory() {

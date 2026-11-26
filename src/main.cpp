@@ -1,6 +1,9 @@
 #include <QGuiApplication>
+#include <QDebug>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QQuickStyle>
 
 #include "core/PlayerService.hpp"
@@ -32,6 +35,35 @@ int main(int argc, char** argv) {
     playerService.initialize();
     regleService.initialize();
     matchService.initialize();
+
+    struct TestPlayer {
+        const char* pseudo;
+        int mmr;
+    };
+    constexpr TestPlayer testPlayers[]{
+        {"Test Bronze", 100},
+        {"Test Argent", 400},
+        {"Test Or", 600},
+        {"Test Platine", 1000},
+        {"Test Diamant", 1500},
+        {"Test Guepard Supreme", 2000}
+    };
+
+    QSqlQuery seedPlayerQuery;
+    seedPlayerQuery.prepare(QStringLiteral(
+        "INSERT OR IGNORE INTO players (pseudo, mmr_ranked) "
+        "VALUES (:pseudo, :mmr)"
+    ));
+    for (const auto& testPlayer : testPlayers) {
+        seedPlayerQuery.bindValue(QStringLiteral(":pseudo"),
+                                  QString::fromLatin1(testPlayer.pseudo));
+        seedPlayerQuery.bindValue(QStringLiteral(":mmr"), testPlayer.mmr);
+        if (!seedPlayerQuery.exec()) {
+            qWarning() << "Insertion du joueur de test impossible :"
+                       << seedPlayerQuery.lastError().text();
+        }
+    }
+
 
     // faire le pont entre le UI(qml) et le cpp derrière
     babyfoot::ui::AppController controller{

@@ -246,7 +246,7 @@ Dialog {
                     spacing: 2
 
                     Label {
-                        text: "🔥  " + Number((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.mmr ?? 1000) : 1000).toFixed(0) + " MMR"
+                        text: Number((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.mmr ?? 1000) : 1000).toFixed(0) + " MMR"
                         color: "#FFFFFF"
                         font.pixelSize: 27
                         font.bold: true
@@ -309,7 +309,7 @@ Dialog {
                     spacing: 2
                     Label {
                         Layout.fillWidth: true
-                        text: "🏆  " + String((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.wins ?? 0) : 0)
+                        text: String((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.wins ?? 0) : 0)
                         color: "#8DE0A8"
                         font.pixelSize: 20
                         font.bold: true
@@ -345,7 +345,7 @@ Dialog {
                     }
                     Label {
                         Layout.fillWidth: true
-                        text: "⚽ MATCHS JOUÉS"
+                        text: "MATCHS JOUÉS"
                         color: "#7E8FA6"
                         font.pixelSize: 10
                         font.bold: true
@@ -366,7 +366,7 @@ Dialog {
                     spacing: 2
                     Label {
                         Layout.fillWidth: true
-                        text: "💔  " + String((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.losses ?? 0) : 0)
+                        text: String((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.losses ?? 0) : 0)
                         color: "#FF8A9B"
                         font.pixelSize: 20
                         font.bold: true
@@ -397,7 +397,7 @@ Dialog {
                 spacing: 8
 
                 Label {
-                    text: "🥅  STATISTIQUES DE BUTS"
+                    text: "STATISTIQUES DE BUTS"
                     color: "#7E8FA6"
                     font.pixelSize: 10
                     font.bold: true
@@ -412,18 +412,23 @@ Dialog {
                         spacing: 2
                         Label {
                             Layout.fillWidth: true
-                            text: "⚽  " + String((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.goals ?? 0) : 0)
-                            color: "#E1E7F0"
+                            Layout.preferredHeight: 26
+                            text: String((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.goals ?? 0) : 0)
+                            color: "#8DE0A8"
                             font.pixelSize: 19
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
                         }
                         Label {
                             Layout.fillWidth: true
+                            Layout.preferredHeight: 28
                             text: "Buts marqués"
                             color: "#7E8FA6"
                             font.pixelSize: 10
                             horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            wrapMode: Text.WordWrap
                         }
                     }
 
@@ -432,18 +437,23 @@ Dialog {
                         spacing: 2
                         Label {
                             Layout.fillWidth: true
-                            text: "🥅  " + String((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.gamelles ?? 0) : 0)
-                            color: "#E1E7F0"
+                            Layout.preferredHeight: 26
+                            text: String((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.gamelles ?? 0) : 0)
+                            color: "#38BDF8"
                             font.pixelSize: 19
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
                         }
                         Label {
                             Layout.fillWidth: true
+                            Layout.preferredHeight: 28
                             text: "Gamelles"
                             color: "#7E8FA6"
                             font.pixelSize: 10
                             horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            wrapMode: Text.WordWrap
                         }
                     }
 
@@ -452,18 +462,23 @@ Dialog {
                         spacing: 2
                         Label {
                             Layout.fillWidth: true
-                            text: "😅  " + String((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.ownGoals ?? 0) : 0)
-                            color: "#E1E7F0"
+                            Layout.preferredHeight: 26
+                            text: String((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.ownGoals ?? 0) : 0)
+                            color: "#FF8A9B"
                             font.pixelSize: 19
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
                         }
                         Label {
                             Layout.fillWidth: true
+                            Layout.preferredHeight: 28
                             text: "CSC"
                             color: "#7E8FA6"
                             font.pixelSize: 10
                             horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            wrapMode: Text.WordWrap
                         }
                     }
 
@@ -472,18 +487,23 @@ Dialog {
                         spacing: 2
                         Label {
                             Layout.fillWidth: true
-                            text: "✨  " + String((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.usefulGoals ?? 0) : 0)
-                            color: "#E1E7F0"
+                            Layout.preferredHeight: 26
+                            text: String((typeof appController !== "undefined" && appController.selectedPlayer) ? (appController.selectedPlayer.usefulGoals ?? 0) : 0)
+                            color: "#F7C96B"
                             font.pixelSize: 19
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
                         }
                         Label {
                             Layout.fillWidth: true
+                            Layout.preferredHeight: 28
                             text: "Buts utiles"
                             color: "#7E8FA6"
                             font.pixelSize: 10
                             horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            wrapMode: Text.WordWrap
                         }
                     }
                 }

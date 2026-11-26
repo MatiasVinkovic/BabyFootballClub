@@ -93,7 +93,7 @@ Rectangle {
             id: incBtn
             Layout.fillWidth: true
             Layout.preferredHeight: 64
-            text: "⚡ BUT MARQUÉ !"
+            text: "BUT MARQUÉ !"
 
             contentItem: Text {
                 text: incBtn.text

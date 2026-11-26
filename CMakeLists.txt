@@ -34,6 +34,7 @@ qt_add_qml_module(babyfoot-app
     VERSION 1.0
     RESOURCES
         icons/argent.png
+        src/ui/logo.png
         icons/bronze.png
         icons/diamant.png
         icons/guepard_supreme.png
@@ -51,6 +52,7 @@ qt_add_qml_module(babyfoot-app
         src/ui/MatchHistoryView.qml
         src/ui/MatchDetailsDialog.qml
         src/ui/RankingView.qml
+        src/ui/SplashOverlay.qml
 )
 
 target_include_directories(babyfoot-app PRIVATE src)

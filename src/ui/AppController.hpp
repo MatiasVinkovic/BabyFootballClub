@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QProcess>
 #include <QStringList>
 #include <QVariantList>
 #include <QVariantMap>
@@ -20,6 +21,8 @@ class AppController final : public QObject {
     Q_PROPERTY(QVariantList matchHistory READ matchHistory NOTIFY matchHistoryChanged)
     Q_PROPERTY(QVariantList leaderboard READ leaderboard NOTIFY leaderboardChanged)
     Q_PROPERTY(QVariantList topPlayers READ topPlayers NOTIFY topPlayersChanged)
+    Q_PROPERTY(bool databaseRefreshRunning READ databaseRefreshRunning
+               NOTIFY databaseRefreshRunningChanged)
     Q_PROPERTY(bool leaderboardRanked READ leaderboardRanked NOTIFY leaderboardChanged)
     Q_PROPERTY(QString leaderboardSort READ leaderboardSort NOTIFY leaderboardChanged)
 
@@ -34,6 +37,7 @@ public:
     QVariantList matchHistory() const { return matchHistory_; }
     QVariantList leaderboard() const { return leaderboard_; }
     QVariantList topPlayers() const { return topPlayers_; }
+    bool databaseRefreshRunning() const { return databaseRefreshRunning_; }
     bool leaderboardRanked() const { return leaderboardRanked_; }
     QString leaderboardSort() const { return leaderboardSort_; }
 
@@ -52,6 +56,7 @@ public:
                                                   const QString& eventType);
     Q_INVOKABLE QVariantMap matchDetails(int matchId);
     Q_INVOKABLE void poweroff();
+    Q_INVOKABLE void refreshDatabase();
 
 signals:
     void playersChanged();
@@ -61,6 +66,8 @@ signals:
     void matchHistoryChanged();
     void leaderboardChanged();
     void topPlayersChanged();
+    void databaseRefreshRunningChanged();
+    void databaseRefreshFinished(bool success, const QString& message);
 
 private:
     void refreshPlayers();
@@ -69,10 +76,12 @@ private:
     void refreshLeaderboard();
     void refreshTopPlayers();
     void refreshAfterMatch();
+    void completeDatabaseRefresh(bool scriptSucceeded, const QString& message);
 
     babyfoot::core::PlayerService& playerService_;
     babyfoot::core::RegleService& regleService_;
     babyfoot::core::MatchService& matchService_;
+    QProcess refreshProcess_;
 
     QStringList players_;
     QVariantMap selectedPlayer_;
@@ -83,6 +92,7 @@ private:
     int counter_ = 0;
     bool leaderboardRanked_ = false;
     QString leaderboardSort_ = QStringLiteral("goals");
+    bool databaseRefreshRunning_ = false;
 };
 
 }

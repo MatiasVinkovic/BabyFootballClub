@@ -1,6 +1,8 @@
 #include "ui/AppController.hpp"
 
+#include <QCoreApplication>
 #include <QDebug>
+#include <QSqlDatabase>
 #include <QProcess>
 #include <map>
 #include <algorithm>
@@ -18,6 +20,25 @@ AppController::AppController(babyfoot::core::PlayerService& playerService,
       playerService_{playerService},
       regleService_{regleService},
       matchService_{matchService} {
+    connect(&refreshProcess_, &QProcess::finished, this,
+            [this](int exitCode, QProcess::ExitStatus exitStatus) {
+        const bool succeeded = exitStatus == QProcess::NormalExit && exitCode == 0;
+        const QString message = succeeded
+            ? QStringLiteral("La base de données a été actualisée.")
+            : QStringLiteral("Le script d'actualisation a échoué (code %1).")
+                  .arg(exitCode);
+        completeDatabaseRefresh(succeeded, message);
+    });
+    connect(&refreshProcess_, &QProcess::errorOccurred, this,
+            [this](QProcess::ProcessError error) {
+        if (error == QProcess::FailedToStart) {
+            completeDatabaseRefresh(
+                false,
+                QStringLiteral("Impossible de lancer le script : %1")
+                    .arg(refreshProcess_.errorString()));
+        }
+    });
+
     refreshPlayers();
         refreshLeaderboard();
         refreshTopPlayers();
@@ -82,6 +103,53 @@ void AppController::poweroff() {
     const QString scriptPath = QStringLiteral("/home/yann/Desktop/poweroff.sh");
     if (!QProcess::startDetached(QStringLiteral("/bin/sh"), {scriptPath})) {
         qWarning() << "Impossible de lancer le script d'arrêt :" << scriptPath;
+    }
+}
+
+void AppController::refreshDatabase() {
+    if (databaseRefreshRunning_) {
+        return;
+    }
+
+    databaseRefreshRunning_ = true;
+    emit databaseRefreshRunningChanged();
+
+    QSqlDatabase::database().close();
+    refreshProcess_.setWorkingDirectory(QCoreApplication::applicationDirPath());
+    refreshProcess_.start(QStringLiteral("/bin/sh"),
+                          {QStringLiteral("/home/yann/Desktop/refresh.sh")});
+}
+
+void AppController::completeDatabaseRefresh(bool scriptSucceeded,
+                                            const QString& message) {
+    if (!databaseRefreshRunning_) {
+        return;
+    }
+
+    QSqlDatabase database = QSqlDatabase::database();
+    const bool databaseOpened = database.isValid() && database.open();
+    if (databaseOpened) {
+        refreshPlayers();
+        refreshRegles();
+        refreshMatchHistory();
+
+        const QString selectedPseudo =
+            selectedPlayer_.value(QStringLiteral("pseudo")).toString();
+        selectedPlayer_.clear();
+        emit selectedPlayerChanged();
+        if (!selectedPseudo.isEmpty()) {
+            selectPlayer(selectedPseudo);
+        }
+    }
+
+    databaseRefreshRunning_ = false;
+    emit databaseRefreshRunningChanged();
+
+    if (!databaseOpened) {
+        emit databaseRefreshFinished(
+            false, QStringLiteral("Impossible de rouvrir la base de données."));
+    } else {
+        emit databaseRefreshFinished(scriptSucceeded, message);
     }
 }
 

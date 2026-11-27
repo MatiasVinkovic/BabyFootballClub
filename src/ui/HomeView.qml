@@ -70,23 +70,27 @@ Rectangle {
             }
 
             Button {
-                text: "Créer un match"
-                Layout.preferredWidth: 178
-                Layout.preferredHeight: 48
-                scale: hovered ? 1.04 : (down ? 0.98 : 1)
-                onClicked: control.navigateTo(2)
-                Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                text: appController.databaseRefreshRunning
+                      ? "Actualisation..." : "Actualiser les données"
+                Layout.preferredWidth: 172
+                Layout.preferredHeight: 46
+                transform: Translate { x: 8; y: -8 }
+                enabled: !appController.databaseRefreshRunning
+                onClicked: appController.refreshDatabase()
                 contentItem: Text {
                     text: parent.text
-                    color: "#07131F"
-                    font.pixelSize: 14
+                    color: "#DDF7FF"
+                    font.pixelSize: 12
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
                 background: Rectangle {
                     radius: 8
-                    color: parent.hovered ? "#7DEBFF" : "#43D6E8"
+                    color: parent.enabled
+                           ? (parent.hovered ? "#173D68" : "#102A4A") : "#17283A"
+                    border.color: "#66D9EF"
+                    border.width: 1
                     Behavior on color { ColorAnimation { duration: 150 } }
                 }
             }
@@ -530,6 +534,38 @@ Rectangle {
 
                 TapHandler { onTapped: control.navigateTo(2) }
             }
+        }
+    }
+
+    property string refreshMessage: ""
+
+    Connections {
+        target: appController
+        function onDatabaseRefreshFinished(success, message) {
+            control.refreshMessage = message
+            refreshDialog.title = success ? "Données actualisées" : "Échec de l'actualisation"
+            refreshDialog.open()
+        }
+    }
+
+    Dialog {
+        id: refreshDialog
+        title: "Actualisation des données"
+        modal: true
+        standardButtons: Dialog.Ok
+        anchors.centerIn: Overlay.overlay
+
+        contentItem: Label {
+            text: control.refreshMessage
+            color: "#EAF1F8"
+            wrapMode: Text.WordWrap
+            Layout.preferredWidth: 320
+        }
+
+        background: Rectangle {
+            color: "#14243A"
+            border.color: "#66D9EF"
+            radius: 8
         }
     }
 }
